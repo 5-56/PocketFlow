@@ -498,6 +498,262 @@ async def health_check():
         "websocket_connections": len(websocket_connections)
     }
 
+# AI交互API
+@app.post("/api/ai/chat")
+async def ai_chat(request: Request):
+    """AI聊天接口"""
+    try:
+        data = await request.json()
+        message = data.get("message", "")
+        context = data.get("context", {})
+        selected_text = data.get("selected_text")
+        settings = data.get("settings", {})
+        
+        if not message:
+            raise HTTPException(status_code=400, detail="消息内容不能为空")
+        
+        # 准备AI处理数据
+        ai_data = {
+            "user_message": message,
+            "context": context,
+            "selected_text": selected_text,
+            "ai_settings": settings,
+            "task_type": "chat",
+            "timestamp": datetime.now().isoformat()
+        }
+        
+        # 使用AI聊天工作流处理
+        ai_result = await orchestrator.ai_chat(ai_data)
+        
+        # 提取AI响应
+        ai_response = ai_result.get("ai_response", "抱歉，我无法处理您的请求。")
+        suggestions = ai_result.get("ai_suggestions", [])
+        modifications = ai_result.get("ai_modifications", [])
+        token_usage = ai_result.get("token_usage", 0)
+        
+        # 广播AI聊天消息
+        await broadcast_to_websockets({
+            "type": "ai_chat_response",
+            "message": message,
+            "response": ai_response,
+            "timestamp": datetime.now().isoformat()
+        })
+        
+        return {
+            "success": True,
+            "response": ai_response,
+            "suggestions": suggestions,
+            "modifications": modifications,
+            "token_usage": token_usage
+        }
+        
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"AI聊天失败: {str(e)}")
+
+@app.post("/api/ai/quick-action")
+async def ai_quick_action(request: Request):
+    """AI快速操作接口"""
+    try:
+        data = await request.json()
+        action = data.get("action", "")
+        text = data.get("text", "")
+        document_id = data.get("document_id")
+        settings = data.get("settings", {})
+        
+        if not action or not text:
+            raise HTTPException(status_code=400, detail="操作类型和文本内容不能为空")
+        
+        # 准备快速操作数据
+        quick_data = {
+            "action_type": action,
+            "target_text": text,
+            "document_id": document_id,
+            "ai_settings": settings,
+            "task_type": "quick_action",
+            "timestamp": datetime.now().isoformat()
+        }
+        
+        # 如果有文档ID，合并文档数据
+        if document_id and document_id in documents_storage:
+            quick_data.update(documents_storage[document_id])
+        
+        # 使用AI快速操作工作流处理
+        ai_result = await orchestrator.ai_quick_action(quick_data)
+        
+        # 提取处理结果
+        processed_result = ai_result.get("ai_result", text)
+        modifications = ai_result.get("ai_modifications", [])
+        suggestions = ai_result.get("ai_suggestions", [])
+        
+        # 如果有文档ID，更新文档数据
+        if document_id and document_id in documents_storage:
+            documents_storage[document_id].update(ai_result)
+        
+        # 广播快速操作完成
+        await broadcast_to_websockets({
+            "type": "ai_quick_action_completed",
+            "action": action,
+            "document_id": document_id,
+            "timestamp": datetime.now().isoformat()
+        })
+        
+        return {
+            "success": True,
+            "result": processed_result,
+            "original_text": text,
+            "modifications": modifications,
+            "suggestions": suggestions
+        }
+        
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"快速操作失败: {str(e)}")
+
+@app.get("/api/ai/settings")
+async def get_ai_settings():
+    """获取AI设置"""
+    try:
+        # 默认AI设置
+        default_settings = {
+            "model": "gpt-4",
+            "max_tokens": 4000,
+            "temperature": 0.7,
+            "response_style": "professional",
+            "language": "zh-CN",
+            "system_prompt": "你是一个专业的文档编辑助手，专注于帮助用户改进文档内容。请保持专业、准确和有帮助的态度。",
+            "auto_suggest": True,
+            "context_aware": True,
+            "available_models": ["gpt-4", "gpt-4-turbo", "gpt-3.5-turbo", "claude-3"],
+            "supported_languages": ["zh-CN", "en-US", "ja-JP", "ko-KR"],
+            "response_styles": ["professional", "friendly", "concise", "detailed"]
+        }
+        
+        return {"success": True, "settings": default_settings}
+        
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"获取设置失败: {str(e)}")
+
+@app.post("/api/ai/settings")
+async def save_ai_settings(request: Request):
+    """保存AI设置"""
+    try:
+        settings = await request.json()
+        
+        # 验证必要的设置字段
+        required_fields = ["model", "max_tokens", "temperature"]
+        for field in required_fields:
+            if field not in settings:
+                raise HTTPException(status_code=400, detail=f"缺少必要的设置字段: {field}")
+        
+        # 验证设置值的有效性
+        if settings.get("max_tokens", 0) < 100 or settings.get("max_tokens", 0) > 8000:
+            raise HTTPException(status_code=400, detail="max_tokens必须在100-8000之间")
+        
+        if settings.get("temperature", 0) < 0 or settings.get("temperature", 0) > 2:
+            raise HTTPException(status_code=400, detail="temperature必须在0-2之间")
+        
+        # 在生产环境中，这里应该保存到数据库或配置文件
+        # 这里简单存储到全局变量中
+        if "ai_settings" not in documents_storage:
+            documents_storage["ai_settings"] = {}
+        
+        documents_storage["ai_settings"] = settings
+        
+        # 广播设置更新
+        await broadcast_to_websockets({
+            "type": "ai_settings_updated",
+            "timestamp": datetime.now().isoformat()
+        })
+        
+        return {"success": True, "message": "设置已保存"}
+        
+    except HTTPException:
+        raise
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"保存设置失败: {str(e)}")
+
+@app.post("/api/ai/test-connection")
+async def test_ai_connection(request: Request):
+    """测试AI连接"""
+    try:
+        data = await request.json()
+        api_key = data.get("api_key", "")
+        model = data.get("model", "gpt-4")
+        
+        if not api_key:
+            raise HTTPException(status_code=400, detail="API密钥不能为空")
+        
+        # 创建测试用的AI处理器
+        from utils.ai_processor import AIProcessor
+        ai_processor = AIProcessor()
+        
+        # 测试连接
+        test_result = await ai_processor.test_connection(api_key, model)
+        
+        if test_result:
+            return {
+                "success": True,
+                "message": "连接成功",
+                "model": model,
+                "latency": test_result.get("latency", 0)
+            }
+        else:
+            return {
+                "success": False,
+                "message": "连接失败，请检查API密钥和网络连接"
+            }
+            
+    except Exception as e:
+        return {
+            "success": False,
+            "message": f"连接测试失败: {str(e)}"
+        }
+
+@app.get("/api/ai/usage")
+async def get_ai_usage():
+    """获取AI使用统计"""
+    try:
+        # 在实际应用中，这些数据应该从数据库或监控系统获取
+        usage_data = {
+            "today_tokens": 1250,
+            "monthly_tokens": 48750,
+            "monthly_limit": 50000,
+            "requests_today": 35,
+            "average_response_time": 2.3,
+            "success_rate": 0.97,
+            "last_updated": datetime.now().isoformat()
+        }
+        
+        return {"success": True, "usage": usage_data}
+        
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"获取使用统计失败: {str(e)}")
+
+@app.post("/api/ai/templates")
+async def get_ai_templates():
+    """获取AI指令模板"""
+    try:
+        templates = {
+            "text_optimization": [
+                {"id": "optimize_clarity", "name": "提升清晰度", "template": "请优化这段文字的清晰度，使表达更准确易懂："},
+                {"id": "optimize_tone", "name": "调整语调", "template": "请调整这段文字的语调，使其更适合目标读者："},
+                {"id": "fix_grammar", "name": "语法修正", "template": "请检查并修正这段文字的语法和拼写错误："}
+            ],
+            "content_processing": [
+                {"id": "summarize", "name": "生成摘要", "template": "请为这段内容生成一个简洁明了的摘要："},
+                {"id": "expand", "name": "扩展内容", "template": "请扩展这段内容，添加更多相关细节和解释："},
+                {"id": "restructure", "name": "重构结构", "template": "请重新组织这段内容的结构，使逻辑更清晰："}
+            ],
+            "translation": [
+                {"id": "translate_en", "name": "翻译为英文", "template": "请将这段内容翻译为英文，保持原意不变："},
+                {"id": "localize", "name": "本地化", "template": "请将这段内容本地化，使其更适合中文读者的习惯："}
+            ]
+        }
+        
+        return {"success": True, "templates": templates}
+        
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"获取模板失败: {str(e)}")
+
 # 启动事件
 @app.on_event("startup")
 async def startup_event():

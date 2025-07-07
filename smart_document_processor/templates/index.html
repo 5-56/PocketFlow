@@ -273,19 +273,175 @@
                 </div>
             </main>
 
-            <!-- 属性面板 -->
-            <aside class="properties-panel" id="propertiesPanel">
+            <!-- AI交互面板 -->
+            <aside class="ai-interaction-panel" id="aiInteractionPanel">
                 <div class="panel-header">
-                    <h3>属性</h3>
-                    <button class="icon-btn small" onclick="togglePropertiesPanel()">
-                        <i class="fas fa-times"></i>
-                    </button>
+                    <h3><i class="fas fa-robot"></i> AI助手</h3>
+                    <div class="panel-actions">
+                        <button class="icon-btn small" onclick="openAISettings()" title="设置">
+                            <i class="fas fa-cog"></i>
+                        </button>
+                        <button class="icon-btn small" onclick="toggleAIPanel()" title="收起">
+                            <i class="fas fa-chevron-right"></i>
+                        </button>
+                    </div>
                 </div>
-                <div class="properties-content" id="propertiesContent">
-                    <!-- 属性内容将根据选中元素动态显示 -->
-                    <div class="empty-state">
-                        <i class="fas fa-sliders-h"></i>
-                        <p>选择元素查看属性</p>
+                
+                <!-- AI模型状态 -->
+                <div class="ai-status">
+                    <div class="model-info">
+                        <div class="model-details">
+                            <span class="model-name" id="currentModel">GPT-4</span>
+                            <span class="model-version">Version 1.0</span>
+                        </div>
+                        <span class="model-status online" id="modelStatus">
+                            <i class="fas fa-circle"></i>
+                            在线
+                        </span>
+                    </div>
+                    <div class="usage-info">
+                        <div class="usage-item">
+                            <span class="usage-label">今日使用:</span>
+                            <span class="usage-value" id="tokenCount">1,250 tokens</span>
+                        </div>
+                        <div class="usage-item">
+                            <span class="usage-label">本月剩余:</span>
+                            <span class="usage-value" id="monthlyQuota">48,750 tokens</span>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- 快速操作 -->
+                <div class="quick-actions">
+                    <h4>快速操作</h4>
+                    <div class="action-grid">
+                        <button class="action-btn" onclick="quickAction('optimize')" title="优化选中内容">
+                            <i class="fas fa-magic"></i>
+                            <span>智能优化</span>
+                        </button>
+                        <button class="action-btn" onclick="quickAction('summarize')" title="生成内容摘要">
+                            <i class="fas fa-compress-alt"></i>
+                            <span>生成摘要</span>
+                        </button>
+                        <button class="action-btn" onclick="quickAction('translate')" title="翻译内容">
+                            <i class="fas fa-language"></i>
+                            <span>翻译</span>
+                        </button>
+                        <button class="action-btn" onclick="quickAction('rewrite')" title="重写内容">
+                            <i class="fas fa-pen"></i>
+                            <span>重写</span>
+                        </button>
+                        <button class="action-btn" onclick="quickAction('expand')" title="扩展内容">
+                            <i class="fas fa-expand-arrows-alt"></i>
+                            <span>扩展</span>
+                        </button>
+                        <button class="action-btn" onclick="quickAction('format')" title="格式化文档">
+                            <i class="fas fa-align-left"></i>
+                            <span>格式化</span>
+                        </button>
+                    </div>
+                </div>
+
+                <!-- 选中内容预览 -->
+                <div class="selected-content" id="selectedContent" style="display: none;">
+                    <div class="selected-header">
+                        <span><i class="fas fa-text-height"></i> 选中内容</span>
+                        <button class="icon-btn small" onclick="clearSelection()" title="清除选择">
+                            <i class="fas fa-times"></i>
+                        </button>
+                    </div>
+                    <div class="selected-preview">
+                        <div class="selected-text" id="selectedText"></div>
+                        <div class="selected-stats">
+                            <span id="selectedWordCount">0 字</span> • 
+                            <span id="selectedCharCount">0 字符</span>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- AI对话区域 -->
+                <div class="ai-chat">
+                    <h4>AI对话</h4>
+                    <div class="chat-messages" id="chatMessages">
+                        <div class="message ai-message">
+                            <div class="message-avatar">
+                                <i class="fas fa-robot"></i>
+                            </div>
+                            <div class="message-content">
+                                <div class="message-text">
+                                    你好！我是你的AI文档助手。你可以：<br>
+                                    • 选择文档中的任意内容进行编辑<br>
+                                    • 使用快速操作进行常见处理<br>
+                                    • 直接与我对话获取帮助
+                                </div>
+                                <div class="message-time">刚刚</div>
+                                <div class="message-actions">
+                                    <button class="action-link" onclick="showHelp()">查看帮助</button>
+                                    <button class="action-link" onclick="showExamples()">查看示例</button>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- 输入区域 -->
+                    <div class="chat-input">
+                        <div class="input-header">
+                            <div class="input-mode">
+                                <button class="mode-btn active" onclick="switchInputMode('text')" data-mode="text">
+                                    <i class="fas fa-keyboard"></i>
+                                    文本
+                                </button>
+                                <button class="mode-btn" onclick="switchInputMode('voice')" data-mode="voice">
+                                    <i class="fas fa-microphone"></i>
+                                    语音
+                                </button>
+                            </div>
+                        </div>
+                        <div class="input-container">
+                            <textarea id="chatInput" placeholder="输入指令或问题，例如：'优化这段文字的表达'、'翻译为英文'..." rows="3"></textarea>
+                            <div class="input-tools">
+                                <button class="tool-btn" onclick="insertTemplate()" title="插入模板">
+                                    <i class="fas fa-list"></i>
+                                </button>
+                                <button class="tool-btn" onclick="attachFile()" title="附加文件">
+                                    <i class="fas fa-paperclip"></i>
+                                </button>
+                                <button class="tool-btn" onclick="toggleVoiceInput()" title="语音输入">
+                                    <i class="fas fa-microphone"></i>
+                                </button>
+                                <button class="send-btn" onclick="sendMessage()" title="发送">
+                                    <i class="fas fa-paper-plane"></i>
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- 处理进度 -->
+                <div class="ai-progress" id="aiProgress" style="display: none;">
+                    <div class="progress-header">
+                        <div class="progress-info">
+                            <i class="fas fa-spinner fa-spin"></i>
+                            <span id="progressTitle">AI处理中...</span>
+                        </div>
+                        <button class="icon-btn small" onclick="cancelAIProcess()" title="取消">
+                            <i class="fas fa-stop"></i>
+                        </button>
+                    </div>
+                    <div class="progress-bar">
+                        <div class="progress-fill" id="progressFill" style="width: 0%"></div>
+                    </div>
+                    <div class="progress-details">
+                        <div class="progress-text" id="progressText">正在分析文档内容...</div>
+                        <div class="progress-time" id="progressTime">预计 30 秒</div>
+                    </div>
+                </div>
+
+                <!-- 建议操作 -->
+                <div class="ai-suggestions" id="aiSuggestions" style="display: none;">
+                    <h4>建议操作</h4>
+                    <div class="suggestions-list" id="suggestionsList">
+                        <!-- 动态生成的建议 -->
                     </div>
                 </div>
             </aside>
@@ -446,6 +602,289 @@
             <div class="modal-footer">
                 <button class="btn secondary" onclick="closeModal('exportModal')">取消</button>
                 <button class="btn primary" onclick="startExport()">导出</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- AI设置对话框 -->
+    <div class="modal" id="aiSettingsModal">
+        <div class="modal-content large">
+            <div class="modal-header">
+                <h3><i class="fas fa-cog"></i> AI助手设置</h3>
+                <button class="close-btn" onclick="closeModal('aiSettingsModal')">
+                    <i class="fas fa-times"></i>
+                </button>
+            </div>
+            <div class="modal-body">
+                <div class="settings-tabs">
+                    <button class="settings-tab active" onclick="switchSettingsTab('model')" data-tab="model">
+                        <i class="fas fa-brain"></i>
+                        模型设置
+                    </button>
+                    <button class="settings-tab" onclick="switchSettingsTab('behavior')" data-tab="behavior">
+                        <i class="fas fa-sliders-h"></i>
+                        行为设置
+                    </button>
+                    <button class="settings-tab" onclick="switchSettingsTab('advanced')" data-tab="advanced">
+                        <i class="fas fa-cogs"></i>
+                        高级设置
+                    </button>
+                </div>
+
+                <!-- 模型设置 -->
+                <div class="settings-content active" id="model-settings">
+                    <div class="form-group">
+                        <label for="aiModel">AI模型：</label>
+                        <select id="aiModel" onchange="updateModelSettings()">
+                            <option value="gpt-4">GPT-4 (推荐)</option>
+                            <option value="gpt-4-turbo">GPT-4 Turbo</option>
+                            <option value="gpt-3.5-turbo">GPT-3.5 Turbo</option>
+                            <option value="claude-3">Claude-3</option>
+                        </select>
+                        <p class="help-text">选择适合的AI模型。GPT-4提供最佳质量但速度较慢。</p>
+                    </div>
+
+                    <div class="form-group">
+                        <label for="apiKey">API密钥：</label>
+                        <div class="input-with-button">
+                            <input type="password" id="apiKey" placeholder="输入您的API密钥">
+                            <button class="btn secondary" onclick="testAPIKey()">测试连接</button>
+                        </div>
+                        <p class="help-text">请确保API密钥有足够的使用额度。</p>
+                    </div>
+
+                    <div class="form-group">
+                        <label for="maxTokens">最大Token数：</label>
+                        <div class="slider-container">
+                            <input type="range" id="maxTokens" min="100" max="8000" value="4000" 
+                                   oninput="updateTokenDisplay(this.value)">
+                            <div class="slider-labels">
+                                <span>100</span>
+                                <span id="tokenDisplay">4000</span>
+                                <span>8000</span>
+                            </div>
+                        </div>
+                        <p class="help-text">控制AI响应的最大长度。较高的值允许更详细的回答。</p>
+                    </div>
+
+                    <div class="form-group">
+                        <label for="temperature">创造性水平：</label>
+                        <div class="slider-container">
+                            <input type="range" id="temperature" min="0" max="2" step="0.1" value="0.7" 
+                                   oninput="updateTemperatureDisplay(this.value)">
+                            <div class="slider-labels">
+                                <span>保守</span>
+                                <span id="temperatureDisplay">平衡</span>
+                                <span>创造</span>
+                            </div>
+                        </div>
+                        <p class="help-text">控制AI回答的创造性。较低的值更保守准确，较高的值更有创意。</p>
+                    </div>
+                </div>
+
+                <!-- 行为设置 -->
+                <div class="settings-content" id="behavior-settings">
+                    <div class="form-group">
+                        <label for="responseStyle">回答风格：</label>
+                        <select id="responseStyle">
+                            <option value="professional">专业</option>
+                            <option value="friendly">友好</option>
+                            <option value="concise">简洁</option>
+                            <option value="detailed">详细</option>
+                        </select>
+                    </div>
+
+                    <div class="form-group">
+                        <label for="language">默认语言：</label>
+                        <select id="language">
+                            <option value="zh-CN">中文</option>
+                            <option value="en-US">English</option>
+                            <option value="ja-JP">日本語</option>
+                            <option value="ko-KR">한국어</option>
+                        </select>
+                    </div>
+
+                    <div class="form-group">
+                        <label>自动功能：</label>
+                        <div class="checkbox-group">
+                            <label class="checkbox-label">
+                                <input type="checkbox" id="autoSuggest" checked>
+                                <span class="checkmark"></span>
+                                自动提供建议
+                            </label>
+                            <label class="checkbox-label">
+                                <input type="checkbox" id="autoOptimize">
+                                <span class="checkmark"></span>
+                                自动优化文本
+                            </label>
+                            <label class="checkbox-label">
+                                <input type="checkbox" id="autoTranslate">
+                                <span class="checkmark"></span>
+                                检测并提示翻译
+                            </label>
+                            <label class="checkbox-label">
+                                <input type="checkbox" id="contextAware" checked>
+                                <span class="checkmark"></span>
+                                上下文感知
+                            </label>
+                        </div>
+                    </div>
+
+                    <div class="form-group">
+                        <label for="responseTime">响应延迟：</label>
+                        <select id="responseTime">
+                            <option value="immediate">立即响应</option>
+                            <option value="short">短暂延迟(1秒)</option>
+                            <option value="normal" selected>正常延迟(2秒)</option>
+                            <option value="long">较长延迟(5秒)</option>
+                        </select>
+                        <p class="help-text">设置AI响应的延迟时间，避免频繁调用。</p>
+                    </div>
+                </div>
+
+                <!-- 高级设置 -->
+                <div class="settings-content" id="advanced-settings">
+                    <div class="form-group">
+                        <label for="systemPrompt">系统提示词：</label>
+                        <textarea id="systemPrompt" rows="4" placeholder="自定义AI的行为和角色...">
+你是一个专业的文档编辑助手，专注于帮助用户改进文档内容。请保持专业、准确和有帮助的态度。
+                        </textarea>
+                        <p class="help-text">自定义AI的行为模式和回答风格。</p>
+                    </div>
+
+                    <div class="form-group">
+                        <label for="contextLength">上下文长度：</label>
+                        <select id="contextLength">
+                            <option value="short">短(1000字符)</option>
+                            <option value="medium" selected>中(3000字符)</option>
+                            <option value="long">长(6000字符)</option>
+                            <option value="full">完整文档</option>
+                        </select>
+                        <p class="help-text">AI分析文档时考虑的上下文范围。</p>
+                    </div>
+
+                    <div class="form-group">
+                        <label>调试选项：</label>
+                        <div class="checkbox-group">
+                            <label class="checkbox-label">
+                                <input type="checkbox" id="showTokenUsage">
+                                <span class="checkmark"></span>
+                                显示Token使用量
+                            </label>
+                            <label class="checkbox-label">
+                                <input type="checkbox" id="showProcessTime">
+                                <span class="checkmark"></span>
+                                显示处理时间
+                            </label>
+                            <label class="checkbox-label">
+                                <input type="checkbox" id="logAPIErrors">
+                                <span class="checkmark"></span>
+                                记录API错误
+                            </label>
+                        </div>
+                    </div>
+
+                    <div class="form-group">
+                        <label for="customEndpoint">自定义API端点：</label>
+                        <input type="text" id="customEndpoint" placeholder="https://api.openai.com/v1/chat/completions">
+                        <p class="help-text">使用自定义的API端点（高级用户）。</p>
+                    </div>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button class="btn secondary" onclick="resetSettings()">重置</button>
+                <button class="btn secondary" onclick="exportSettings()">导出配置</button>
+                <button class="btn secondary" onclick="importSettings()">导入配置</button>
+                <button class="btn primary" onclick="saveAISettings()">保存设置</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- 模板选择对话框 -->
+    <div class="modal" id="templateModal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h3><i class="fas fa-list"></i> 选择指令模板</h3>
+                <button class="close-btn" onclick="closeModal('templateModal')">
+                    <i class="fas fa-times"></i>
+                </button>
+            </div>
+            <div class="modal-body">
+                <div class="template-categories">
+                    <div class="category">
+                        <h4>文本优化</h4>
+                        <div class="template-list">
+                            <button class="template-item" onclick="insertInstructionTemplate('optimize_clarity')">
+                                <i class="fas fa-eye"></i>
+                                <div>
+                                    <span class="template-name">提升清晰度</span>
+                                    <span class="template-desc">让文字更清晰易懂</span>
+                                </div>
+                            </button>
+                            <button class="template-item" onclick="insertInstructionTemplate('optimize_tone')">
+                                <i class="fas fa-volume-up"></i>
+                                <div>
+                                    <span class="template-name">调整语调</span>
+                                    <span class="template-desc">改变文本的语调风格</span>
+                                </div>
+                            </button>
+                            <button class="template-item" onclick="insertInstructionTemplate('fix_grammar')">
+                                <i class="fas fa-spell-check"></i>
+                                <div>
+                                    <span class="template-name">语法修正</span>
+                                    <span class="template-desc">修正语法和拼写错误</span>
+                                </div>
+                            </button>
+                        </div>
+                    </div>
+                    
+                    <div class="category">
+                        <h4>内容处理</h4>
+                        <div class="template-list">
+                            <button class="template-item" onclick="insertInstructionTemplate('summarize')">
+                                <i class="fas fa-compress-alt"></i>
+                                <div>
+                                    <span class="template-name">生成摘要</span>
+                                    <span class="template-desc">提取关键信息</span>
+                                </div>
+                            </button>
+                            <button class="template-item" onclick="insertInstructionTemplate('expand')">
+                                <i class="fas fa-expand-arrows-alt"></i>
+                                <div>
+                                    <span class="template-name">扩展内容</span>
+                                    <span class="template-desc">丰富和详细化内容</span>
+                                </div>
+                            </button>
+                            <button class="template-item" onclick="insertInstructionTemplate('restructure')">
+                                <i class="fas fa-sitemap"></i>
+                                <div>
+                                    <span class="template-name">重构结构</span>
+                                    <span class="template-desc">改善文档组织结构</span>
+                                </div>
+                            </button>
+                        </div>
+                    </div>
+
+                    <div class="category">
+                        <h4>翻译和本地化</h4>
+                        <div class="template-list">
+                            <button class="template-item" onclick="insertInstructionTemplate('translate_en')">
+                                <i class="fas fa-language"></i>
+                                <div>
+                                    <span class="template-name">翻译为英文</span>
+                                    <span class="template-desc">保持原意的英文翻译</span>
+                                </div>
+                            </button>
+                            <button class="template-item" onclick="insertInstructionTemplate('localize')">
+                                <i class="fas fa-globe"></i>
+                                <div>
+                                    <span class="template-name">本地化</span>
+                                    <span class="template-desc">适应目标地区文化</span>
+                                </div>
+                            </button>
+                        </div>
+                    </div>
+                </div>
             </div>
         </div>
     </div>

@@ -676,9 +676,651 @@ const App = {
     }
 };
 
+// AI交互功能
+const AIAssistant = {
+    settings: {
+        model: 'gpt-4',
+        apiKey: '',
+        maxTokens: 4000,
+        temperature: 0.7,
+        responseStyle: 'professional',
+        language: 'zh-CN',
+        systemPrompt: '你是一个专业的文档编辑助手，专注于帮助用户改进文档内容。请保持专业、准确和有帮助的态度。',
+        autoSuggest: true,
+        contextAware: true
+    },
+    
+    chatHistory: [],
+    selectedContent: null,
+    isProcessing: false,
+    
+    init() {
+        this.loadSettings();
+        this.bindEvents();
+        this.updateModelStatus();
+        this.initSelectionDetection();
+    },
+    
+    bindEvents() {
+        // 监听文档选择变化
+        document.addEventListener('selectionchange', this.handleSelectionChange.bind(this));
+        
+        // 回车键发送消息
+        const chatInput = document.getElementById('chatInput');
+        if (chatInput) {
+            chatInput.addEventListener('keydown', (e) => {
+                if (e.key === 'Enter' && !e.shiftKey) {
+                    e.preventDefault();
+                    this.sendMessage();
+                }
+            });
+        }
+    },
+    
+    loadSettings() {
+        const saved = localStorage.getItem('ai_settings');
+        if (saved) {
+            this.settings = { ...this.settings, ...JSON.parse(saved) };
+        }
+        this.applySettings();
+    },
+    
+    saveSettings() {
+        localStorage.setItem('ai_settings', JSON.stringify(this.settings));
+    },
+    
+    applySettings() {
+        // 更新界面显示
+        document.getElementById('currentModel').textContent = this.settings.model.toUpperCase();
+        document.getElementById('tokenCount').textContent = `${this.getTokenUsage()} tokens`;
+        document.getElementById('monthlyQuota').textContent = `${this.getMonthlyQuota()} tokens`;
+    },
+    
+    updateModelStatus() {
+        const statusElement = document.getElementById('modelStatus');
+        const isOnline = this.checkAPIConnection();
+        
+        if (isOnline) {
+            statusElement.className = 'model-status online';
+            statusElement.innerHTML = '<i class="fas fa-circle"></i> 在线';
+        } else {
+            statusElement.className = 'model-status offline';
+            statusElement.innerHTML = '<i class="fas fa-circle"></i> 离线';
+        }
+    },
+    
+    checkAPIConnection() {
+        return this.settings.apiKey && this.settings.apiKey.length > 0;
+    },
+    
+    getTokenUsage() {
+        // 模拟数据，实际应从服务器获取
+        return 1250;
+    },
+    
+    getMonthlyQuota() {
+        // 模拟数据，实际应从服务器获取
+        return 48750;
+    },
+    
+    initSelectionDetection() {
+        // 监听文档区域的文本选择
+        const documentViewer = document.getElementById('documentViewer');
+        if (documentViewer) {
+            documentViewer.addEventListener('mouseup', this.handleSelectionChange.bind(this));
+        }
+    },
+    
+    handleSelectionChange() {
+        const selection = window.getSelection();
+        const selectedText = selection.toString().trim();
+        
+        if (selectedText && selectedText.length > 0) {
+            this.selectedContent = {
+                text: selectedText,
+                range: selection.getRangeAt(0),
+                element: selection.anchorNode.parentElement
+            };
+            this.showSelectedContent(selectedText);
+        } else {
+            this.selectedContent = null;
+            this.hideSelectedContent();
+        }
+    },
+    
+    showSelectedContent(text) {
+        const selectedContentDiv = document.getElementById('selectedContent');
+        const selectedTextDiv = document.getElementById('selectedText');
+        const selectedWordCount = document.getElementById('selectedWordCount');
+        const selectedCharCount = document.getElementById('selectedCharCount');
+        
+        if (selectedContentDiv && selectedTextDiv) {
+            selectedTextDiv.textContent = text.length > 100 ? text.substring(0, 100) + '...' : text;
+            selectedWordCount.textContent = `${this.countWords(text)} 字`;
+            selectedCharCount.textContent = `${text.length} 字符`;
+            selectedContentDiv.style.display = 'block';
+        }
+    },
+    
+    hideSelectedContent() {
+        const selectedContentDiv = document.getElementById('selectedContent');
+        if (selectedContentDiv) {
+            selectedContentDiv.style.display = 'none';
+        }
+    },
+    
+    countWords(text) {
+        // 中英文字符统计
+        const chineseChars = text.match(/[\u4e00-\u9fa5]/g) || [];
+        const englishWords = text.match(/[a-zA-Z]+/g) || [];
+        return chineseChars.length + englishWords.length;
+    },
+    
+    async sendMessage() {
+        const chatInput = document.getElementById('chatInput');
+        const message = chatInput.value.trim();
+        
+        if (!message) return;
+        
+        // 添加用户消息到聊天历史
+        this.addMessage('user', message);
+        chatInput.value = '';
+        
+        // 显示处理状态
+        this.showProcessing('正在思考中...');
+        
+        try {
+            // 构建请求数据
+            const requestData = {
+                message: message,
+                context: this.buildContext(),
+                selected_text: this.selectedContent?.text || null,
+                settings: this.settings
+            };
+            
+            const response = await fetch('/api/ai/chat', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify(requestData)
+            });
+            
+            const data = await response.json();
+            
+            if (data.success) {
+                this.addMessage('ai', data.response);
+                
+                // 如果有建议的操作，显示建议
+                if (data.suggestions) {
+                    this.showSuggestions(data.suggestions);
+                }
+                
+                // 如果有内容修改，应用修改
+                if (data.modifications) {
+                    this.applyModifications(data.modifications);
+                }
+            } else {
+                throw new Error(data.message || 'AI处理失败');
+            }
+        } catch (error) {
+            console.error('AI Chat Error:', error);
+            this.addMessage('ai', '抱歉，处理您的请求时出现了错误。请稍后再试。');
+            App.showNotification('error', 'AI错误', error.message);
+        } finally {
+            this.hideProcessing();
+        }
+    },
+    
+    buildContext() {
+        // 构建AI需要的上下文信息
+        const context = {
+            document: App.state.currentDocument ? {
+                filename: App.state.currentDocument.filename,
+                type: App.state.currentDocument.document_type
+            } : null,
+            chat_history: this.chatHistory.slice(-5), // 最近5条消息
+            timestamp: new Date().toISOString()
+        };
+        
+        return context;
+    },
+    
+    addMessage(sender, content) {
+        const chatMessages = document.getElementById('chatMessages');
+        const messageId = `msg_${Date.now()}`;
+        const timestamp = new Date().toLocaleTimeString('zh-CN', { 
+            hour: '2-digit', 
+            minute: '2-digit' 
+        });
+        
+        const messageHtml = `
+            <div class="message ${sender}-message" id="${messageId}">
+                <div class="message-avatar">
+                    <i class="fas fa-${sender === 'ai' ? 'robot' : 'user'}"></i>
+                </div>
+                <div class="message-content">
+                    <div class="message-text">${this.formatMessageContent(content)}</div>
+                    <div class="message-time">${timestamp}</div>
+                    ${sender === 'ai' ? this.getMessageActions() : ''}
+                </div>
+            </div>
+        `;
+        
+        chatMessages.insertAdjacentHTML('beforeend', messageHtml);
+        chatMessages.scrollTop = chatMessages.scrollHeight;
+        
+        // 添加到聊天历史
+        this.chatHistory.push({
+            sender: sender,
+            content: content,
+            timestamp: new Date().toISOString()
+        });
+        
+        // 限制历史记录长度
+        if (this.chatHistory.length > 50) {
+            this.chatHistory = this.chatHistory.slice(-30);
+        }
+    },
+    
+    formatMessageContent(content) {
+        // 格式化消息内容，支持简单的markdown
+        return content
+            .replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>')
+            .replace(/\*(.*?)\*/g, '<em>$1</em>')
+            .replace(/\n/g, '<br>');
+    },
+    
+    getMessageActions() {
+        return `
+            <div class="message-actions">
+                <button class="action-link" onclick="AIAssistant.copyMessage(this)">复制</button>
+                <button class="action-link" onclick="AIAssistant.regenerateResponse(this)">重新生成</button>
+            </div>
+        `;
+    },
+    
+    showProcessing(message) {
+        const progressDiv = document.getElementById('aiProgress');
+        const progressText = document.getElementById('progressText');
+        const progressTitle = document.getElementById('progressTitle');
+        
+        if (progressDiv && progressText && progressTitle) {
+            progressTitle.textContent = message;
+            progressText.textContent = '正在处理您的请求...';
+            progressDiv.style.display = 'block';
+            this.isProcessing = true;
+            
+            // 模拟进度更新
+            this.updateProcessingProgress();
+        }
+    },
+    
+    updateProcessingProgress() {
+        const progressFill = document.querySelector('#aiProgress .progress-fill');
+        let progress = 0;
+        const interval = setInterval(() => {
+            if (!this.isProcessing) {
+                clearInterval(interval);
+                return;
+            }
+            
+            progress += Math.random() * 10;
+            if (progress > 90) progress = 90;
+            
+            if (progressFill) {
+                progressFill.style.width = `${progress}%`;
+            }
+        }, 200);
+    },
+    
+    hideProcessing() {
+        const progressDiv = document.getElementById('aiProgress');
+        if (progressDiv) {
+            progressDiv.style.display = 'none';
+            this.isProcessing = false;
+        }
+    },
+    
+    showSuggestions(suggestions) {
+        const suggestionsDiv = document.getElementById('aiSuggestions');
+        const suggestionsList = document.getElementById('suggestionsList');
+        
+        if (suggestionsDiv && suggestionsList) {
+            const suggestionsHtml = suggestions.map(suggestion => `
+                <div class="suggestion-item" onclick="AIAssistant.applySuggestion('${suggestion.action}', '${suggestion.target}')">
+                    ${suggestion.text}
+                </div>
+            `).join('');
+            
+            suggestionsList.innerHTML = suggestionsHtml;
+            suggestionsDiv.style.display = 'block';
+        }
+    },
+    
+    async quickAction(action) {
+        if (!this.selectedContent && !App.state.currentDocument) {
+            App.showNotification('warning', '请先选择内容', '请选择文档中的内容或确保有文档打开');
+            return;
+        }
+        
+        const actionMap = {
+            'optimize': '优化这段文字的表达，使其更清晰流畅',
+            'summarize': '为这段内容生成简洁的摘要',
+            'translate': '将这段内容翻译为英文',
+            'rewrite': '用不同的方式重写这段内容',
+            'expand': '扩展这段内容，添加更多细节',
+            'format': '改善这段内容的格式和结构'
+        };
+        
+        const instruction = actionMap[action];
+        if (instruction) {
+            document.getElementById('chatInput').value = instruction;
+            await this.sendMessage();
+        }
+    },
+    
+    applyModifications(modifications) {
+        // 应用AI建议的修改到文档
+        console.log('Applying modifications:', modifications);
+        // 实际实现会更复杂，需要更新文档内容
+    },
+    
+    applySuggestion(action, target) {
+        console.log('Applying suggestion:', action, target);
+        // 实现建议的应用逻辑
+    },
+    
+    copyMessage(button) {
+        const messageText = button.closest('.message').querySelector('.message-text').textContent;
+        navigator.clipboard.writeText(messageText).then(() => {
+            App.showNotification('success', '已复制', '消息内容已复制到剪贴板');
+        });
+    },
+    
+    regenerateResponse(button) {
+        // 重新生成最后一个AI响应
+        const lastUserMessage = this.chatHistory.slice().reverse().find(msg => msg.sender === 'user');
+        if (lastUserMessage) {
+            document.getElementById('chatInput').value = lastUserMessage.content;
+            this.sendMessage();
+        }
+    }
+};
+
+// AI设置相关函数
+function openAISettings() {
+    document.getElementById('aiSettingsModal').classList.add('show');
+    loadAISettingsValues();
+}
+
+function loadAISettingsValues() {
+    // 加载当前设置到表单
+    document.getElementById('aiModel').value = AIAssistant.settings.model;
+    document.getElementById('apiKey').value = AIAssistant.settings.apiKey;
+    document.getElementById('maxTokens').value = AIAssistant.settings.maxTokens;
+    document.getElementById('temperature').value = AIAssistant.settings.temperature;
+    document.getElementById('responseStyle').value = AIAssistant.settings.responseStyle;
+    document.getElementById('language').value = AIAssistant.settings.language;
+    document.getElementById('systemPrompt').value = AIAssistant.settings.systemPrompt;
+    document.getElementById('autoSuggest').checked = AIAssistant.settings.autoSuggest;
+    document.getElementById('contextAware').checked = AIAssistant.settings.contextAware;
+    
+    updateTokenDisplay(AIAssistant.settings.maxTokens);
+    updateTemperatureDisplay(AIAssistant.settings.temperature);
+}
+
+function switchSettingsTab(tabName) {
+    // 切换设置标签页
+    document.querySelectorAll('.settings-tab').forEach(tab => {
+        tab.classList.remove('active');
+    });
+    document.querySelectorAll('.settings-content').forEach(content => {
+        content.classList.remove('active');
+    });
+    
+    document.querySelector(`[data-tab="${tabName}"]`).classList.add('active');
+    document.getElementById(`${tabName}-settings`).classList.add('active');
+}
+
+function updateTokenDisplay(value) {
+    document.getElementById('tokenDisplay').textContent = value;
+}
+
+function updateTemperatureDisplay(value) {
+    const labels = ['保守', '平衡', '创造'];
+    const index = Math.round(value * 1.5);
+    document.getElementById('temperatureDisplay').textContent = labels[Math.min(index, 2)];
+}
+
+function updateModelSettings() {
+    const model = document.getElementById('aiModel').value;
+    // 根据模型调整默认设置
+    const modelDefaults = {
+        'gpt-4': { maxTokens: 4000, temperature: 0.7 },
+        'gpt-4-turbo': { maxTokens: 8000, temperature: 0.7 },
+        'gpt-3.5-turbo': { maxTokens: 3000, temperature: 0.8 },
+        'claude-3': { maxTokens: 4000, temperature: 0.6 }
+    };
+    
+    const defaults = modelDefaults[model];
+    if (defaults) {
+        document.getElementById('maxTokens').value = defaults.maxTokens;
+        document.getElementById('temperature').value = defaults.temperature;
+        updateTokenDisplay(defaults.maxTokens);
+        updateTemperatureDisplay(defaults.temperature);
+    }
+}
+
+function testAPIKey() {
+    const apiKey = document.getElementById('apiKey').value;
+    if (!apiKey) {
+        App.showNotification('warning', '请输入API密钥', '需要API密钥才能测试连接');
+        return;
+    }
+    
+    // 模拟API测试
+    App.showNotification('info', '测试中', '正在测试API连接...');
+    setTimeout(() => {
+        App.showNotification('success', '连接成功', 'API密钥有效，连接正常');
+    }, 2000);
+}
+
+function saveAISettings() {
+    // 保存设置
+    AIAssistant.settings = {
+        ...AIAssistant.settings,
+        model: document.getElementById('aiModel').value,
+        apiKey: document.getElementById('apiKey').value,
+        maxTokens: parseInt(document.getElementById('maxTokens').value),
+        temperature: parseFloat(document.getElementById('temperature').value),
+        responseStyle: document.getElementById('responseStyle').value,
+        language: document.getElementById('language').value,
+        systemPrompt: document.getElementById('systemPrompt').value,
+        autoSuggest: document.getElementById('autoSuggest').checked,
+        contextAware: document.getElementById('contextAware').checked
+    };
+    
+    AIAssistant.saveSettings();
+    AIAssistant.applySettings();
+    AIAssistant.updateModelStatus();
+    
+    closeModal('aiSettingsModal');
+    App.showNotification('success', '设置已保存', 'AI助手设置已更新');
+}
+
+function resetSettings() {
+    if (confirm('确定要重置所有设置吗？这将清除所有自定义配置。')) {
+        AIAssistant.settings = {
+            model: 'gpt-4',
+            apiKey: '',
+            maxTokens: 4000,
+            temperature: 0.7,
+            responseStyle: 'professional',
+            language: 'zh-CN',
+            systemPrompt: '你是一个专业的文档编辑助手，专注于帮助用户改进文档内容。请保持专业、准确和有帮助的态度。',
+            autoSuggest: true,
+            contextAware: true
+        };
+        loadAISettingsValues();
+        App.showNotification('info', '设置已重置', '所有设置已恢复为默认值');
+    }
+}
+
+function exportSettings() {
+    const settings = JSON.stringify(AIAssistant.settings, null, 2);
+    const blob = new Blob([settings], { type: 'application/json' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = 'ai_settings.json';
+    a.click();
+    URL.revokeObjectURL(url);
+}
+
+function importSettings() {
+    const input = document.createElement('input');
+    input.type = 'file';
+    input.accept = '.json';
+    input.onchange = (e) => {
+        const file = e.target.files[0];
+        if (file) {
+            const reader = new FileReader();
+            reader.onload = (e) => {
+                try {
+                    const settings = JSON.parse(e.target.result);
+                    AIAssistant.settings = { ...AIAssistant.settings, ...settings };
+                    loadAISettingsValues();
+                    App.showNotification('success', '设置已导入', '配置文件已成功加载');
+                } catch (error) {
+                    App.showNotification('error', '导入失败', '配置文件格式不正确');
+                }
+            };
+            reader.readAsText(file);
+        }
+    };
+    input.click();
+}
+
+// 模板相关函数
+function insertTemplate() {
+    document.getElementById('templateModal').classList.add('show');
+}
+
+function insertInstructionTemplate(templateId) {
+    const templates = {
+        'optimize_clarity': '请优化这段文字的清晰度，使表达更准确易懂：',
+        'optimize_tone': '请调整这段文字的语调，使其更适合目标读者：',
+        'fix_grammar': '请检查并修正这段文字的语法和拼写错误：',
+        'summarize': '请为这段内容生成一个简洁明了的摘要：',
+        'expand': '请扩展这段内容，添加更多相关细节和解释：',
+        'restructure': '请重新组织这段内容的结构，使逻辑更清晰：',
+        'translate_en': '请将这段内容翻译为英文，保持原意不变：',
+        'localize': '请将这段内容本地化，使其更适合中文读者的习惯：'
+    };
+    
+    const template = templates[templateId];
+    if (template) {
+        document.getElementById('chatInput').value = template;
+        closeModal('templateModal');
+        document.getElementById('chatInput').focus();
+    }
+}
+
+// 其他AI交互函数
+function toggleAIPanel() {
+    const panel = document.getElementById('aiInteractionPanel');
+    panel.classList.toggle('collapsed');
+}
+
+function clearSelection() {
+    window.getSelection().removeAllRanges();
+    AIAssistant.hideSelectedContent();
+}
+
+function clearChat() {
+    if (confirm('确定要清除所有对话记录吗？')) {
+        const chatMessages = document.getElementById('chatMessages');
+        chatMessages.innerHTML = `
+            <div class="message ai-message">
+                <div class="message-avatar">
+                    <i class="fas fa-robot"></i>
+                </div>
+                <div class="message-content">
+                    <div class="message-text">
+                        你好！我是你的AI文档助手。你可以：<br>
+                        • 选择文档中的任意内容进行编辑<br>
+                        • 使用快速操作进行常见处理<br>
+                        • 直接与我对话获取帮助
+                    </div>
+                    <div class="message-time">刚刚</div>
+                    <div class="message-actions">
+                        <button class="action-link" onclick="showHelp()">查看帮助</button>
+                        <button class="action-link" onclick="showExamples()">查看示例</button>
+                    </div>
+                </div>
+            </div>
+        `;
+        AIAssistant.chatHistory = [];
+        App.showNotification('info', '对话已清除', '聊天记录已清空');
+    }
+}
+
+function switchInputMode(mode) {
+    document.querySelectorAll('.mode-btn').forEach(btn => {
+        btn.classList.remove('active');
+    });
+    document.querySelector(`[data-mode="${mode}"]`).classList.add('active');
+    
+    if (mode === 'voice') {
+        // 语音输入功能
+        App.showNotification('info', '语音功能', '语音输入功能即将推出');
+    }
+}
+
+function toggleVoiceInput() {
+    App.showNotification('info', '语音功能', '语音输入功能即将推出');
+}
+
+function attachFile() {
+    App.showNotification('info', '附件功能', '文件附件功能即将推出');
+}
+
+function cancelAIProcess() {
+    AIAssistant.isProcessing = false;
+    AIAssistant.hideProcessing();
+    App.showNotification('info', '已取消', 'AI处理已取消');
+}
+
+function sendMessage() {
+    AIAssistant.sendMessage();
+}
+
+function quickAction(action) {
+    AIAssistant.quickAction(action);
+}
+
+function showHelp() {
+    App.showNotification('info', 'AI助手帮助', '选择文档内容后使用快速操作，或直接输入指令与AI对话');
+}
+
+function showExamples() {
+    const examples = [
+        '优化这段文字的表达',
+        '翻译为英文',
+        '生成摘要',
+        '扩展内容',
+        '调整语调'
+    ];
+    
+    const exampleText = examples.join('\n• ');
+    AIAssistant.addMessage('ai', `以下是一些常用指令示例：\n\n• ${exampleText}\n\n您可以直接输入这些指令，或根据需要修改。`);
+}
+
 // 初始化应用
 document.addEventListener('DOMContentLoaded', () => {
     App.init();
+    AIAssistant.init();
 });
 
 // 全局函数（供HTML调用）

@@ -19,6 +19,42 @@ class AIProcessor:
         self.openai_api_key = os.getenv("OPENAI_API_KEY", "your-openai-api-key")
         self.client = openai.OpenAI(api_key=self.openai_api_key)
         self.async_client = AsyncOpenAI(api_key=self.openai_api_key)
+    
+    async def test_connection(self, api_key: str, model: str = "gpt-4") -> dict:
+        """测试API连接"""
+        try:
+            import time
+            
+            # 创建临时客户端
+            test_client = AsyncOpenAI(api_key=api_key)
+            
+            start_time = time.time()
+            
+            # 发送测试请求
+            response = await test_client.chat.completions.create(
+                model=model,
+                messages=[
+                    {"role": "user", "content": "Hello, this is a test message."}
+                ],
+                max_tokens=10,
+                temperature=0
+            )
+            
+            end_time = time.time()
+            latency = round((end_time - start_time) * 1000, 2)  # 毫秒
+            
+            if response and response.choices:
+                return {
+                    "success": True,
+                    "latency": latency,
+                    "model": model,
+                    "usage": response.usage.dict() if hasattr(response, 'usage') else {}
+                }
+            else:
+                return {"success": False, "error": "No response received"}
+                
+        except Exception as e:
+            return {"success": False, "error": str(e)}
         
         # 配置模型参数
         self.text_model = "gpt-4"

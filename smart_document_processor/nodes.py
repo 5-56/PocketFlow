@@ -358,3 +358,189 @@ class BatchTextProcessingNode(BatchNode):
         """保存批量处理结果"""
         shared["batch_processed_texts"] = exec_res_list
         return "merge_results"
+
+class AIChatNode(AsyncNode):
+    """AI聊天节点"""
+    
+    def __init__(self):
+        super().__init__()
+        self.ai_processor = AIProcessor()
+    
+    async def prep_async(self, shared):
+        # 准备聊天数据
+        message = shared.get("user_message", "")
+        context = shared.get("context", {})
+        selected_text = shared.get("selected_text", "")
+        ai_settings = shared.get("ai_settings", {})
+        
+        return {
+            "message": message,
+            "context": context,
+            "selected_text": selected_text,
+            "settings": ai_settings
+        }
+    
+    async def exec_async(self, prep_res):
+        try:
+            message = prep_res["message"]
+            selected_text = prep_res["selected_text"]
+            settings = prep_res["settings"]
+            
+            # 构建完整的提示
+            if selected_text:
+                full_prompt = f"""
+用户选中的文本：{selected_text}
+
+用户指令：{message}
+
+请根据用户的指令处理选中的文本，如果没有特定指令，请提供有用的建议。
+"""
+            else:
+                full_prompt = message
+            
+            # 设置AI处理器参数
+            if settings.get("max_tokens"):
+                self.ai_processor.max_tokens = settings["max_tokens"]
+            if settings.get("temperature"):
+                self.ai_processor.temperature = settings["temperature"]
+            
+            # 调用AI处理
+            response = await self.ai_processor.process_text_async(
+                full_prompt, 
+                "chat", 
+                settings.get("response_style", "professional")
+            )
+            
+            # 生成建议
+            suggestions = self._generate_suggestions(message, selected_text)
+            
+            # 生成修改建议
+            modifications = []
+            if selected_text and any(keyword in message.lower() for keyword in ["优化", "修改", "改进", "重写"]):
+                modifications = [{
+                    "type": "text_replacement",
+                    "original": selected_text,
+                    "suggested": response,
+                    "reason": "基于AI优化建议"
+                }]
+            
+            return {
+                "response": response,
+                "suggestions": suggestions,
+                "modifications": modifications,
+                "token_usage": len(full_prompt) + len(response)  # 简单估算
+            }
+            
+        except Exception as e:
+            return {
+                "response": f"抱歉，处理您的请求时出现了错误：{str(e)}",
+                "suggestions": [],
+                "modifications": [],
+                "token_usage": 0
+            }
+    
+    async def post_async(self, shared, prep_res, exec_res):
+        # 保存AI响应
+        shared["ai_response"] = exec_res["response"]
+        shared["ai_suggestions"] = exec_res["suggestions"]
+        shared["ai_modifications"] = exec_res["modifications"]
+        shared["token_usage"] = exec_res["token_usage"]
+        
+        return "completed"
+    
+    def _generate_suggestions(self, message: str, selected_text: str) -> list:
+        """生成相关建议"""
+        suggestions = []
+        
+        # 基于消息内容生成建议
+        if selected_text:
+            suggestions.extend([
+                {"action": "optimize", "target": "selected_text", "text": "进一步优化选中文本"},
+                {"action": "translate", "target": "selected_text", "text": "翻译选中文本"},
+                {"action": "expand", "target": "selected_text", "text": "扩展选中文本"}
+            ])
+        
+        # 基于关键词生成建议
+        keywords_suggestions = {
+            "翻译": {"action": "translate", "text": "尝试翻译为其他语言"},
+            "摘要": {"action": "summarize", "text": "生成更详细的摘要"},
+            "优化": {"action": "optimize", "text": "应用更多优化选项"},
+            "格式": {"action": "format", "text": "调整文档格式"}
+        }
+        
+        for keyword, suggestion in keywords_suggestions.items():
+            if keyword in message:
+                suggestions.append(suggestion)
+        
+        return suggestions[:3]  # 限制建议数量
+
+class AIQuickActionNode(AsyncNode):
+    """AI快速操作节点"""
+    
+    def __init__(self):
+        super().__init__()
+        self.ai_processor = AIProcessor()
+    
+    async def prep_async(self, shared):
+        return {
+            "action": shared.get("action_type", ""),
+            "text": shared.get("target_text", ""),
+            "settings": shared.get("ai_settings", {})
+        }
+    
+    async def exec_async(self, prep_res):
+        try:
+            action = prep_res["action"]
+            text = prep_res["text"]
+            settings = prep_res["settings"]
+            
+            # 设置AI处理器参数
+            if settings.get("max_tokens"):
+                self.ai_processor.max_tokens = settings["max_tokens"]
+            if settings.get("temperature"):
+                self.ai_processor.temperature = settings["temperature"]
+            
+            # 根据操作类型处理文本
+            action_map = {
+                "optimize": ("优化这段文字的表达，使其更清晰流畅", "professional"),
+                "summarize": ("为这段内容生成简洁的摘要", "professional"),
+                "translate": ("将这段内容翻译为英文", "professional"),
+                "rewrite": ("用不同的方式重写这段内容", "professional"),
+                "expand": ("扩展这段内容，添加更多细节", "professional"),
+                "format": ("改善这段内容的格式和结构", "professional")
+            }
+            
+            if action in action_map:
+                instruction, style = action_map[action]
+                result = await self.ai_processor.process_text_async(text, instruction, style)
+            else:
+                result = await self.ai_processor.process_text_async(text, f"执行操作：{action}", "professional")
+            
+            return {
+                "result": result,
+                "action": action,
+                "original_text": text
+            }
+            
+        except Exception as e:
+            return {
+                "result": prep_res["text"],  # 返回原文本
+                "action": prep_res["action"],
+                "original_text": prep_res["text"],
+                "error": str(e)
+            }
+    
+    async def post_async(self, shared, prep_res, exec_res):
+        shared["ai_result"] = exec_res["result"]
+        shared["action_performed"] = exec_res["action"]
+        
+        # 生成修改建议
+        if "error" not in exec_res:
+            shared["ai_modifications"] = [{
+                "type": "text_replacement",
+                "original": exec_res["original_text"],
+                "suggested": exec_res["result"],
+                "reason": f"AI {exec_res['action']} 操作结果"
+            }]
+        
+        return "completed"

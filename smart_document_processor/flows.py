@@ -5,7 +5,7 @@ from pocketflow import Flow, AsyncFlow
 from nodes import (
     DocumentParseNode, ContentAnalysisNode, AIProcessingNode,
     ImageProcessingNode, TextEditingNode, DocumentGenerationNode,
-    BatchTextProcessingNode
+    BatchTextProcessingNode, AIChatNode, AIQuickActionNode
 )
 
 def create_document_processing_flow():
@@ -73,6 +73,16 @@ def create_image_processing_flow():
     
     return Flow(start=image_process_node)
 
+def create_ai_chat_flow():
+    """创建AI聊天工作流"""
+    chat_node = AIChatNode()
+    return AsyncFlow(start=chat_node)
+
+def create_ai_quick_action_flow():
+    """创建AI快速操作工作流"""
+    quick_action_node = AIQuickActionNode()
+    return AsyncFlow(start=quick_action_node)
+
 class DocumentProcessingOrchestrator:
     """文档处理编排器 - 管理多个工作流"""
     
@@ -82,6 +92,8 @@ class DocumentProcessingOrchestrator:
         self.batch_flow = create_batch_processing_flow()
         self.ai_flow = create_ai_enhancement_flow()
         self.image_flow = create_image_processing_flow()
+        self.chat_flow = create_ai_chat_flow()
+        self.quick_action_flow = create_ai_quick_action_flow()
     
     async def process_document(self, shared_data):
         """处理文档 - 主要流程"""
@@ -126,6 +138,24 @@ class DocumentProcessingOrchestrator:
             return shared_data
         except Exception as e:
             shared_data["error"] = f"图像处理失败: {str(e)}"
+            return shared_data
+    
+    async def ai_chat(self, shared_data):
+        """AI聊天"""
+        try:
+            await self.chat_flow.run_async(shared_data)
+            return shared_data
+        except Exception as e:
+            shared_data["error"] = f"AI聊天失败: {str(e)}"
+            return shared_data
+    
+    async def ai_quick_action(self, shared_data):
+        """AI快速操作"""
+        try:
+            await self.quick_action_flow.run_async(shared_data)
+            return shared_data
+        except Exception as e:
+            shared_data["error"] = f"AI快速操作失败: {str(e)}"
             return shared_data
 
 # 全局编排器实例
