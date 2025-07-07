@@ -559,51 +559,46 @@ async def ai_quick_action(request: Request):
         text = data.get("text", "")
         document_id = data.get("document_id")
         settings = data.get("settings", {})
+        instruction = data.get("instruction", "")
         
         if not action or not text:
             raise HTTPException(status_code=400, detail="操作类型和文本内容不能为空")
         
-        # 准备快速操作数据
-        quick_data = {
-            "action_type": action,
-            "target_text": text,
-            "document_id": document_id,
-            "ai_settings": settings,
-            "task_type": "quick_action",
-            "timestamp": datetime.now().isoformat()
-        }
-        
-        # 如果有文档ID，合并文档数据
-        if document_id and document_id in documents_storage:
-            quick_data.update(documents_storage[document_id])
-        
-        # 使用AI快速操作工作流处理
-        ai_result = await orchestrator.ai_quick_action(quick_data)
-        
-        # 提取处理结果
-        processed_result = ai_result.get("ai_result", text)
-        modifications = ai_result.get("ai_modifications", [])
-        suggestions = ai_result.get("ai_suggestions", [])
+        # 使用AI处理器进行实际处理
+        if action == "custom" and instruction:
+            result = ai_processor.custom_action(instruction, text)
+        else:
+            # 传递设置中的参数
+            kwargs = {}
+            if action == "translate":
+                kwargs['target_language'] = settings.get('target_language', '英文')
+            elif action == "style_convert":
+                kwargs['style'] = settings.get('style', '专业')
+                
+            result = ai_processor.quick_action(action, text, **kwargs)
         
         # 如果有文档ID，更新文档数据
-        if document_id and document_id in documents_storage:
-            documents_storage[document_id].update(ai_result)
+        if document_id and document_id in documents_storage and result.get("success"):
+            if "ai_processed_texts" not in documents_storage[document_id]:
+                documents_storage[document_id]["ai_processed_texts"] = []
+            
+            documents_storage[document_id]["ai_processed_texts"].append({
+                "action": action,
+                "original": text,
+                "result": result.get("result", text),
+                "timestamp": datetime.now().isoformat()
+            })
         
         # 广播快速操作完成
         await broadcast_to_websockets({
             "type": "ai_quick_action_completed",
             "action": action,
             "document_id": document_id,
+            "success": result.get("success", False),
             "timestamp": datetime.now().isoformat()
         })
         
-        return {
-            "success": True,
-            "result": processed_result,
-            "original_text": text,
-            "modifications": modifications,
-            "suggestions": suggestions
-        }
+        return result
         
     except Exception as e:
         raise HTTPException(status_code=500, detail=f"快速操作失败: {str(e)}")

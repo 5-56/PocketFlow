@@ -105,6 +105,76 @@ class AIProcessor:
 原文：{text}
 
 请返回翻译结果：
+""",
+            "polish": """
+请润色以下文本，改善表达方式、语法和流畅度，保持原意：
+
+原文：{text}
+
+请返回润色后的文本：
+""",
+            "formal": """
+请将以下文本改写为正式、严谨的表达方式：
+
+原文：{text}
+
+请返回正式化的文本：
+""",
+            "explain": """
+请解释以下文本的含义、背景或重要性：
+
+文本：{text}
+
+请提供简洁的解释：
+""",
+            "rewrite": """
+请用不同的表达方式重写以下文本，保持相同的意思：
+
+原文：{text}
+
+请返回重写的文本：
+""",
+            "check_grammar": """
+请检查以下文本的语法错误并修正：
+
+原文：{text}
+
+请返回修正后的文本：
+""",
+            "style_convert": """
+请将以下文本转换为{style}风格：
+
+原文：{text}
+
+请返回转换后的文本：
+""",
+            "generate_outline": """
+请为以下文档内容生成结构化的大纲：
+
+文档内容：{text}
+
+请返回HTML格式的大纲：
+""",
+            "content_audit": """
+请审核以下内容，检查是否存在敏感词、不当内容或逻辑漏洞：
+
+内容：{text}
+
+请返回审核结果和建议：
+""",
+            "generate_section": """
+请根据以下大纲或主题生成详细的章节内容：
+
+主题/大纲：{text}
+
+请返回章节内容：
+""",
+            "extract_keywords": """
+请从以下文本中提取关键词和主题：
+
+文本：{text}
+
+请返回关键词列表：
 """
         }
     
@@ -461,3 +531,133 @@ class AIProcessor:
                 
         except Exception as e:
             return f"摘要生成失败: {str(e)}"
+    
+    def quick_action(self, action: str, text: str, **kwargs) -> Dict[str, Any]:
+        """
+        执行快速AI操作
+        
+        Args:
+            action: 操作类型
+            text: 输入文本
+            **kwargs: 其他参数
+            
+        Returns:
+            处理结果
+        """
+        try:
+            # 映射操作到模板
+            action_mapping = {
+                'polish': 'polish',
+                'expand': 'expand', 
+                'summarize': 'summary',
+                'translate': 'translate',
+                'formal': 'formal',
+                'casual': 'casual',
+                'explain': 'explain',
+                'rewrite': 'rewrite',
+                'grammar': 'check_grammar',
+                'outline': 'generate_outline',
+                'audit': 'content_audit',
+                'keywords': 'extract_keywords'
+            }
+            
+            template_key = action_mapping.get(action, action)
+            
+            if template_key not in self.prompt_templates:
+                return {
+                    'success': False,
+                    'message': f'不支持的操作: {action}'
+                }
+            
+            # 处理特殊参数
+            prompt_kwargs = {'text': text}
+            if action == 'translate':
+                prompt_kwargs['target_language'] = kwargs.get('target_language', '英文')
+            elif action in ['style_convert']:
+                prompt_kwargs['style'] = kwargs.get('style', '专业')
+            
+            # 生成提示词
+            prompt = self.prompt_templates[template_key].format(**prompt_kwargs)
+            
+            # 调用AI
+            response = self.client.chat.completions.create(
+                model=self.text_model,
+                messages=[
+                    {"role": "system", "content": "你是一个专业的文本处理助手，请按照用户要求处理文本。"},
+                    {"role": "user", "content": prompt}
+                ],
+                max_tokens=self.max_tokens,
+                temperature=0.7
+            )
+            
+            result = response.choices[0].message.content.strip()
+            
+            return {
+                'success': True,
+                'result': result,
+                'action': action,
+                'usage': {
+                    'prompt_tokens': response.usage.prompt_tokens,
+                    'completion_tokens': response.usage.completion_tokens,
+                    'total_tokens': response.usage.total_tokens
+                }
+            }
+            
+        except Exception as e:
+            logger.error(f"Quick action failed: {str(e)}")
+            return {
+                'success': False,
+                'message': f'操作失败: {str(e)}'
+            }
+    
+    def custom_action(self, instruction: str, text: str) -> Dict[str, Any]:
+        """
+        执行自定义AI操作
+        
+        Args:
+            instruction: 自定义指令
+            text: 输入文本
+            
+        Returns:
+            处理结果
+        """
+        try:
+            prompt = f"""
+请按照以下指令处理文本：
+
+指令：{instruction}
+
+文本：{text}
+
+请返回处理结果：
+"""
+            
+            response = self.client.chat.completions.create(
+                model=self.text_model,
+                messages=[
+                    {"role": "system", "content": "你是一个专业的文本处理助手，请严格按照用户的指令处理文本。"},
+                    {"role": "user", "content": prompt}
+                ],
+                max_tokens=self.max_tokens,
+                temperature=0.7
+            )
+            
+            result = response.choices[0].message.content.strip()
+            
+            return {
+                'success': True,
+                'result': result,
+                'instruction': instruction,
+                'usage': {
+                    'prompt_tokens': response.usage.prompt_tokens,
+                    'completion_tokens': response.usage.completion_tokens,
+                    'total_tokens': response.usage.total_tokens
+                }
+            }
+            
+        except Exception as e:
+            logger.error(f"Custom action failed: {str(e)}")
+            return {
+                'success': False,
+                'message': f'自定义操作失败: {str(e)}'
+            }

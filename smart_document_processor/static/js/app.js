@@ -1321,6 +1321,13 @@ function showExamples() {
 document.addEventListener('DOMContentLoaded', () => {
     App.init();
     AIAssistant.init();
+    
+    // 初始化富文本编辑器
+    setTimeout(() => {
+        if (typeof initRichTextEditor === 'function') {
+            initRichTextEditor();
+        }
+    }, 1000);
 });
 
 // 全局函数（供HTML调用）
