@@ -1,0 +1,23 @@
+# 核心运行时依赖
+pocketflow>=1.0.0
+openai>=1.0.0
+markdown>=3.4.0
+Pillow>=9.0.0
+PyYAML>=6.0
+
+# 多格式支持
+weasyprint>=60.0
+python-docx>=0.8.11
+python-pptx>=0.6.21
+
+# 内容分析
+beautifulsoup4>=4.12.0
+lxml>=4.9.0
+
+# 构建工具
+pyinstaller>=5.13.0
+setuptools>=68.0.0
+wheel>=0.41.0
+
+# 可选依赖（用于某些特定功能）
+requests>=2.31.0

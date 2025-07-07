@@ -22,6 +22,31 @@
 
 ## 🚀 快速开始
 
+### 方式一：下载可执行文件（推荐）
+
+1. **访问发布页面**: [GitHub Releases](../../releases) 下载最新版本
+2. **选择对应平台**:
+   - Windows: `DocumentProcessor-v*-win64.zip`
+   - Linux: `DocumentProcessor-linux-x64.tar.gz`
+3. **解压并设置API密钥**:
+   ```bash
+   # Windows
+   set OPENAI_API_KEY=your_api_key_here
+   
+   # Linux
+   export OPENAI_API_KEY=your_api_key_here
+   ```
+4. **运行程序**:
+   ```bash
+   # Windows
+   DocumentProcessor.exe
+   
+   # Linux
+   ./DocumentProcessor-linux
+   ```
+
+### 方式二：从源码安装
+
 ### 1. 安装依赖
 
 ```bash
@@ -299,15 +324,96 @@ def create_custom_flow():
 tail -f document_processor.log
 ```
 
+## 🔧 构建和发布
+
+### 本地构建
+
+#### Windows
+```bash
+# 使用快速构建脚本
+quick_build.bat
+
+# 或手动构建
+pip install -r requirements-build.txt
+python build.py
+```
+
+#### Linux
+```bash
+# 使用快速构建脚本
+chmod +x quick_build.sh
+./quick_build.sh
+
+# 或手动构建
+pip3 install -r requirements-build.txt
+python3 build.py
+```
+
+### 自动发布
+
+#### 创建Release
+```bash
+# 使用发布脚本（patch版本升级）
+python release.py
+
+# 手动指定版本
+python release.py --version 1.2.0
+
+# 仅构建不发布
+python release.py --build-only
+```
+
+#### GitHub Actions
+推送版本标签会自动触发构建和发布：
+```bash
+git tag v1.0.0
+git push origin v1.0.0
+```
+
+### 构建配置
+
+- **build_config.spec**: PyInstaller配置文件
+- **version_info.txt**: Windows可执行文件版本信息
+- **requirements-build.txt**: 构建专用依赖列表
+- **.github/workflows/build-release.yml**: CI/CD工作流
+
 ## 🤝 贡献指南
 
 欢迎贡献代码和建议！
+
+### 开发环境设置
+
+1. **Fork并克隆项目**
+   ```bash
+   git clone https://github.com/your-username/document-processor.git
+   cd document-processor
+   ```
+
+2. **安装开发依赖**
+   ```bash
+   pip install -r requirements-build.txt
+   ```
+
+3. **运行测试**
+   ```bash
+   python demo.py  # 运行功能演示
+   python main.py --help  # 测试基本功能
+   ```
+
+### 贡献流程
 
 1. Fork 项目
 2. 创建功能分支 (`git checkout -b feature/amazing-feature`)
 3. 提交更改 (`git commit -m 'Add amazing feature'`)
 4. 推送到分支 (`git push origin feature/amazing-feature`)
 5. 创建 Pull Request
+
+### 代码规范
+
+- 遵循PEP 8编码规范
+- 添加必要的文档字符串
+- 确保新功能有相应的测试
+- 更新README文档（如果需要）
 
 ## 📄 许可证
 

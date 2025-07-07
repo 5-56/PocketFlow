@@ -1,0 +1,221 @@
+name: Build and Release
+
+on:
+  push:
+    tags:
+      - 'v*'  # 当推送版本标签时触发
+  workflow_dispatch:  # 允许手动触发
+    inputs:
+      version:
+        description: 'Release version'
+        required: true
+        default: 'v1.0.0'
+
+jobs:
+  build-windows:
+    runs-on: windows-latest
+    
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+      
+    - name: Set up Python
+      uses: actions/setup-python@v4
+      with:
+        python-version: '3.11'
+        
+    - name: Cache pip dependencies
+      uses: actions/cache@v3
+      with:
+        path: ~\AppData\Local\pip\Cache
+        key: ${{ runner.os }}-pip-${{ hashFiles('**/requirements.txt') }}
+        restore-keys: |
+          ${{ runner.os }}-pip-
+          
+    - name: Install dependencies
+      run: |
+        python -m pip install --upgrade pip
+        pip install -r requirements.txt
+        pip install pyinstaller setuptools
+        
+    - name: Create assets directory
+      run: |
+        mkdir -p assets
+        echo "Assets directory created"
+        
+    - name: Build executable
+      run: |
+        python build.py --mode onefile
+        
+    - name: Test executable
+      run: |
+        if (Test-Path "dist/DocumentProcessor.exe") {
+          echo "✅ Executable created successfully"
+          $size = (Get-Item "dist/DocumentProcessor.exe").length / 1MB
+          echo "📊 File size: $([math]::Round($size, 2)) MB"
+        } else {
+          echo "❌ Executable not found"
+          exit 1
+        }
+      shell: powershell
+      
+    - name: Upload build artifacts
+      uses: actions/upload-artifact@v3
+      with:
+        name: windows-executable
+        path: |
+          dist/DocumentProcessor.exe
+          release/*.zip
+          
+  build-linux:
+    runs-on: ubuntu-latest
+    
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+      
+    - name: Set up Python
+      uses: actions/setup-python@v4
+      with:
+        python-version: '3.11'
+        
+    - name: Install system dependencies
+      run: |
+        sudo apt-get update
+        sudo apt-get install -y build-essential
+        
+    - name: Install Python dependencies
+      run: |
+        python -m pip install --upgrade pip
+        pip install -r requirements.txt
+        pip install pyinstaller setuptools
+        
+    - name: Build executable
+      run: |
+        # 修改spec文件以适应Linux
+        sed -i 's/DocumentProcessor/DocumentProcessor-linux/g' build_config.spec
+        sed -i '/icon=/d' build_config.spec  # 移除Windows图标
+        python -c "
+import subprocess
+cmd = ['pyinstaller', '--clean', '--noconfirm', '--onefile', 'build_config.spec']
+subprocess.run(cmd, check=True)
+"
+        
+    - name: Create Linux package
+      run: |
+        mkdir -p release
+        cd dist
+        tar -czf ../release/DocumentProcessor-linux-x64.tar.gz DocumentProcessor-linux
+        
+    - name: Upload Linux artifacts
+      uses: actions/upload-artifact@v3
+      with:
+        name: linux-executable
+        path: release/DocumentProcessor-linux-x64.tar.gz
+        
+  create-release:
+    needs: [build-windows, build-linux]
+    runs-on: ubuntu-latest
+    
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+      
+    - name: Download Windows artifacts
+      uses: actions/download-artifact@v3
+      with:
+        name: windows-executable
+        path: artifacts/windows/
+        
+    - name: Download Linux artifacts
+      uses: actions/download-artifact@v3
+      with:
+        name: linux-executable
+        path: artifacts/linux/
+        
+    - name: Get version from tag or input
+      id: get_version
+      run: |
+        if [ "${{ github.event_name }}" == "workflow_dispatch" ]; then
+          VERSION="${{ github.event.inputs.version }}"
+        else
+          VERSION=${GITHUB_REF#refs/tags/}
+        fi
+        echo "version=${VERSION}" >> $GITHUB_OUTPUT
+        echo "Version: ${VERSION}"
+        
+    - name: Create release notes
+      id: release_notes
+      run: |
+        cat > release_notes.md << 'EOF'
+        # 🎉 智能文档处理系统 ${{ steps.get_version.outputs.version }}
+        
+        ## ✨ 新功能
+        - 🤖 **智能文档格式化**: 支持一句话命令自动排版文档
+        - 📄 **多格式输出**: 支持HTML、PDF、Word、PowerPoint、Markdown
+        - 🎨 **专业模板**: 内置5种专业文档模板
+        - 📊 **内容分析**: 自动分析文档质量并提供优化建议
+        - 💬 **交互式UI**: 支持实时预览和迭代调整
+        
+        ## 📦 下载说明
+        
+        ### Windows用户
+        - **DocumentProcessor-v*-win64.zip**: Windows 64位可执行文件
+        - 解压后直接运行 `DocumentProcessor.exe`
+        
+        ### Linux用户  
+        - **DocumentProcessor-linux-x64.tar.gz**: Linux 64位可执行文件
+        - 解压后运行 `./DocumentProcessor-linux`
+        
+        ## ⚙️ 使用要求
+        1. **API密钥**: 需要设置 `OPENAI_API_KEY` 环境变量
+        2. **网络连接**: 需要连接互联网调用AI服务
+        3. **操作系统**: Windows 10+ 或 Linux (Ubuntu 18.04+)
+        
+        ## 🚀 快速开始
+        ```bash
+        # 设置API密钥 (Windows)
+        set OPENAI_API_KEY=your_api_key_here
+        
+        # 设置API密钥 (Linux/Mac)
+        export OPENAI_API_KEY=your_api_key_here
+        
+        # 运行程序
+        ./DocumentProcessor.exe  # Windows
+        ./DocumentProcessor-linux  # Linux
+        ```
+        
+        ## 📖 使用示例
+        - "转换为现代商务风格的HTML文档，图片加圆角边框"
+        - "生成学术论文格式的PDF，使用蓝白配色"
+        - "制作创意设计文档，图片添加阴影效果"
+        
+        ## 🐛 问题反馈
+        如遇到问题，请在 [GitHub Issues](https://github.com/${{ github.repository }}/issues) 中反馈
+        
+        ---
+        **构建信息**: 
+        - 构建时间: $(date -u '+%Y-%m-%d %H:%M:%S UTC')
+        - Git提交: ${{ github.sha }}
+        EOF
+        
+    - name: Create GitHub Release
+      uses: softprops/action-gh-release@v1
+      with:
+        tag_name: ${{ steps.get_version.outputs.version }}
+        name: "智能文档处理系统 ${{ steps.get_version.outputs.version }}"
+        body_path: release_notes.md
+        draft: false
+        prerelease: false
+        files: |
+          artifacts/windows/release/*.zip
+          artifacts/linux/*.tar.gz
+      env:
+        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        
+    - name: Upload to Release Assets
+      run: |
+        echo "🎉 Release created successfully!"
+        echo "📦 Assets uploaded:"
+        ls -la artifacts/windows/release/ 2>/dev/null || echo "No Windows release files"
+        ls -la artifacts/linux/ 2>/dev/null || echo "No Linux release files"

@@ -1,0 +1,31 @@
+# 核心框架
+pocketflow
+
+# OpenAI API
+openai>=1.0.0
+
+# 基础文档处理
+markdown>=3.4.0
+Pillow>=9.0.0
+pyyaml>=6.0
+
+# 多格式输出支持
+weasyprint>=60.0  # PDF生成
+python-docx>=0.8.11  # Word文档
+python-pptx>=0.6.21  # PowerPoint演示文稿
+
+# 内容分析和处理
+beautifulsoup4>=4.11.0  # HTML解析
+lxml>=4.9.0  # XML解析
+
+# 可选增强功能
+# pypdf2>=3.0.0  # PDF读取
+# reportlab>=3.6.0  # 高级PDF生成
+# matplotlib>=3.6.0  # 图表生成
+# plotly>=5.11.0  # 交互式图表
+
+# 开发和测试工具（可选）
+# pytest>=7.0.0
+# black>=22.0.0
+# flake8>=4.0.0
+# mypy>=0.991
