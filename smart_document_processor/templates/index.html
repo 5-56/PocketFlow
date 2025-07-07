@@ -1,0 +1,464 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>智能文档处理系统 - AI增强版WPS</title>
+    <link rel="stylesheet" href="/static/css/style.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+</head>
+<body>
+    <!-- 主容器 -->
+    <div class="app-container">
+        <!-- 顶部导航栏 -->
+        <header class="top-navbar">
+            <div class="navbar-left">
+                <div class="logo">
+                    <i class="fas fa-file-alt"></i>
+                    <span>智能文档处理系统</span>
+                </div>
+                <div class="file-menu">
+                    <button class="menu-btn" onclick="toggleFileMenu()">
+                        <i class="fas fa-bars"></i>
+                        文件
+                    </button>
+                    <div class="dropdown-menu" id="fileMenu">
+                        <a href="#" onclick="openFileDialog()"><i class="fas fa-upload"></i> 上传文档</a>
+                        <a href="#" onclick="newDocument()"><i class="fas fa-file-plus"></i> 新建文档</a>
+                        <a href="#" onclick="openRecentFiles()"><i class="fas fa-history"></i> 最近文件</a>
+                        <div class="menu-divider"></div>
+                        <a href="#" onclick="showSettings()"><i class="fas fa-cog"></i> 设置</a>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="navbar-center">
+                <div class="document-title">
+                    <input type="text" id="documentTitle" placeholder="未命名文档" readonly>
+                </div>
+            </div>
+            
+            <div class="navbar-right">
+                <button class="icon-btn" onclick="showHelp()" title="帮助">
+                    <i class="fas fa-question-circle"></i>
+                </button>
+                <button class="icon-btn" onclick="showUserMenu()" title="用户菜单">
+                    <i class="fas fa-user-circle"></i>
+                </button>
+            </div>
+        </header>
+
+        <!-- 工具栏 -->
+        <div class="toolbar">
+            <div class="toolbar-section">
+                <button class="tool-btn primary" onclick="openFileDialog()">
+                    <i class="fas fa-upload"></i>
+                    上传文档
+                </button>
+                <button class="tool-btn" onclick="processDocument()" id="processBtn" disabled>
+                    <i class="fas fa-magic"></i>
+                    AI处理
+                </button>
+            </div>
+
+            <div class="toolbar-divider"></div>
+
+            <div class="toolbar-section">
+                <button class="tool-btn" onclick="enhanceDocument('general')" id="enhanceBtn" disabled>
+                    <i class="fas fa-wand-magic-sparkles"></i>
+                    智能优化
+                </button>
+                <div class="dropdown">
+                    <button class="tool-btn dropdown-toggle" onclick="toggleEnhanceMenu()" disabled id="enhanceMenuBtn">
+                        <i class="fas fa-chevron-down"></i>
+                    </button>
+                    <div class="dropdown-content" id="enhanceMenu">
+                        <a href="#" onclick="enhanceDocument('academic')">学术风格</a>
+                        <a href="#" onclick="enhanceDocument('business')">商务风格</a>
+                        <a href="#" onclick="enhanceDocument('creative')">创意风格</a>
+                    </div>
+                </div>
+            </div>
+
+            <div class="toolbar-divider"></div>
+
+            <div class="toolbar-section">
+                <button class="tool-btn" onclick="showExportOptions()" id="exportBtn" disabled>
+                    <i class="fas fa-download"></i>
+                    导出
+                </button>
+                <button class="tool-btn" onclick="shareDocument()" id="shareBtn" disabled>
+                    <i class="fas fa-share"></i>
+                    分享
+                </button>
+            </div>
+
+            <div class="toolbar-divider"></div>
+
+            <div class="toolbar-section">
+                <div class="zoom-controls">
+                    <button class="tool-btn small" onclick="zoomOut()">
+                        <i class="fas fa-minus"></i>
+                    </button>
+                    <span class="zoom-level" id="zoomLevel">100%</span>
+                    <button class="tool-btn small" onclick="zoomIn()">
+                        <i class="fas fa-plus"></i>
+                    </button>
+                </div>
+            </div>
+        </div>
+
+        <!-- 主要内容区域 -->
+        <div class="main-content">
+            <!-- 侧边栏 -->
+            <aside class="sidebar" id="sidebar">
+                <div class="sidebar-tabs">
+                    <button class="tab-btn active" onclick="switchTab('files')" data-tab="files">
+                        <i class="fas fa-folder"></i>
+                        文件
+                    </button>
+                    <button class="tab-btn" onclick="switchTab('outline')" data-tab="outline">
+                        <i class="fas fa-list"></i>
+                        大纲
+                    </button>
+                    <button class="tab-btn" onclick="switchTab('ai')" data-tab="ai">
+                        <i class="fas fa-robot"></i>
+                        AI助手
+                    </button>
+                </div>
+
+                <!-- 文件管理面板 -->
+                <div class="tab-content active" id="files-tab">
+                    <div class="panel-header">
+                        <h3>文档管理</h3>
+                        <button class="icon-btn small" onclick="refreshFileList()">
+                            <i class="fas fa-refresh"></i>
+                        </button>
+                    </div>
+                    <div class="file-list" id="fileList">
+                        <div class="empty-state">
+                            <i class="fas fa-file-upload"></i>
+                            <p>还没有文档</p>
+                            <button class="upload-btn" onclick="openFileDialog()">上传文档</button>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- 大纲面板 -->
+                <div class="tab-content" id="outline-tab">
+                    <div class="panel-header">
+                        <h3>文档大纲</h3>
+                    </div>
+                    <div class="outline-content" id="outlineContent">
+                        <div class="empty-state">
+                            <i class="fas fa-list"></i>
+                            <p>暂无文档大纲</p>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- AI助手面板 -->
+                <div class="tab-content" id="ai-tab">
+                    <div class="panel-header">
+                        <h3>AI助手</h3>
+                    </div>
+                    <div class="ai-assistant" id="aiAssistant">
+                        <div class="ai-suggestions" id="aiSuggestions">
+                            <div class="empty-state">
+                                <i class="fas fa-robot"></i>
+                                <p>AI助手就绪</p>
+                                <p class="small">上传文档后获取智能建议</p>
+                            </div>
+                        </div>
+                        <div class="ai-input-area">
+                            <textarea placeholder="向AI助手提问..." id="aiInput" rows="3"></textarea>
+                            <button class="send-btn" onclick="sendAIMessage()">
+                                <i class="fas fa-paper-plane"></i>
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            </aside>
+
+            <!-- 文档编辑区域 -->
+            <main class="document-area">
+                <div class="document-container" id="documentContainer">
+                    <!-- 欢迎页面 -->
+                    <div class="welcome-screen" id="welcomeScreen">
+                        <div class="welcome-content">
+                            <div class="welcome-icon">
+                                <i class="fas fa-file-alt"></i>
+                            </div>
+                            <h1>智能文档处理系统</h1>
+                            <p>基于AI技术的新一代文档处理平台</p>
+                            
+                            <div class="action-cards">
+                                <div class="action-card" onclick="openFileDialog()">
+                                    <i class="fas fa-upload"></i>
+                                    <h3>上传文档</h3>
+                                    <p>支持Word、PDF、TXT等格式</p>
+                                </div>
+                                <div class="action-card" onclick="newDocument()">
+                                    <i class="fas fa-file-plus"></i>
+                                    <h3>新建文档</h3>
+                                    <p>从空白文档开始创作</p>
+                                </div>
+                                <div class="action-card" onclick="openRecentFiles()">
+                                    <i class="fas fa-history"></i>
+                                    <h3>最近文件</h3>
+                                    <p>继续编辑之前的文档</p>
+                                </div>
+                            </div>
+
+                            <div class="features-showcase">
+                                <h2>核心功能</h2>
+                                <div class="features-grid">
+                                    <div class="feature-item">
+                                        <i class="fas fa-brain"></i>
+                                        <h4>AI智能处理</h4>
+                                        <p>自动优化文档内容和结构</p>
+                                    </div>
+                                    <div class="feature-item">
+                                        <i class="fas fa-image"></i>
+                                        <h4>图像智能编辑</h4>
+                                        <p>自动分析和优化图片</p>
+                                    </div>
+                                    <div class="feature-item">
+                                        <i class="fas fa-file-export"></i>
+                                        <h4>多格式导出</h4>
+                                        <p>支持Word、PDF、HTML等格式</p>
+                                    </div>
+                                    <div class="feature-item">
+                                        <i class="fas fa-users"></i>
+                                        <h4>实时协作</h4>
+                                        <p>多人同时编辑和评论</p>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- 文档内容显示区域 -->
+                    <div class="document-content" id="documentContent" style="display: none;">
+                        <div class="document-header">
+                            <div class="document-info">
+                                <h2 id="currentDocumentTitle">文档标题</h2>
+                                <div class="document-meta">
+                                    <span id="documentStatus">已加载</span>
+                                    <span>•</span>
+                                    <span id="lastModified">刚刚</span>
+                                    <span>•</span>
+                                    <span id="documentSize">--</span>
+                                </div>
+                            </div>
+                            <div class="document-actions">
+                                <button class="action-btn" onclick="editDocument()">
+                                    <i class="fas fa-edit"></i>
+                                    编辑
+                                </button>
+                                <button class="action-btn" onclick="previewDocument()">
+                                    <i class="fas fa-eye"></i>
+                                    预览
+                                </button>
+                            </div>
+                        </div>
+
+                        <div class="document-viewer" id="documentViewer">
+                            <!-- 文档内容将在这里动态加载 -->
+                        </div>
+                    </div>
+                </div>
+            </main>
+
+            <!-- 属性面板 -->
+            <aside class="properties-panel" id="propertiesPanel">
+                <div class="panel-header">
+                    <h3>属性</h3>
+                    <button class="icon-btn small" onclick="togglePropertiesPanel()">
+                        <i class="fas fa-times"></i>
+                    </button>
+                </div>
+                <div class="properties-content" id="propertiesContent">
+                    <!-- 属性内容将根据选中元素动态显示 -->
+                    <div class="empty-state">
+                        <i class="fas fa-sliders-h"></i>
+                        <p>选择元素查看属性</p>
+                    </div>
+                </div>
+            </aside>
+        </div>
+
+        <!-- 状态栏 -->
+        <footer class="status-bar">
+            <div class="status-left">
+                <span class="status-item" id="connectionStatus">
+                    <i class="fas fa-circle connected"></i>
+                    已连接
+                </span>
+                <span class="status-item" id="documentCount">0 个文档</span>
+            </div>
+            <div class="status-center">
+                <div class="progress-container" id="progressContainer" style="display: none;">
+                    <div class="progress-bar">
+                        <div class="progress-fill" id="progressFill"></div>
+                    </div>
+                    <span class="progress-text" id="progressText">处理中...</span>
+                </div>
+            </div>
+            <div class="status-right">
+                <span class="status-item" id="wordCount">0 字</span>
+                <span class="status-item" id="currentTime"></span>
+            </div>
+        </footer>
+    </div>
+
+    <!-- 模态框 -->
+    <!-- 上传对话框 -->
+    <div class="modal" id="uploadModal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h3>上传文档</h3>
+                <button class="close-btn" onclick="closeModal('uploadModal')">
+                    <i class="fas fa-times"></i>
+                </button>
+            </div>
+            <div class="modal-body">
+                <div class="upload-area" id="uploadArea">
+                    <i class="fas fa-cloud-upload-alt"></i>
+                    <p>拖拽文件到此处或点击选择</p>
+                    <p class="small">支持 Word、PDF、TXT、HTML 格式，最大 50MB</p>
+                    <input type="file" id="fileInput" accept=".docx,.pdf,.txt,.html,.doc" style="display: none;">
+                    <button class="upload-btn" onclick="document.getElementById('fileInput').click()">
+                        选择文件
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- 处理选项对话框 -->
+    <div class="modal" id="processModal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h3>AI处理选项</h3>
+                <button class="close-btn" onclick="closeModal('processModal')">
+                    <i class="fas fa-times"></i>
+                </button>
+            </div>
+            <div class="modal-body">
+                <div class="form-group">
+                    <label for="processInstruction">处理指令：</label>
+                    <textarea id="processInstruction" rows="4" placeholder="请描述您希望AI如何处理这个文档..."></textarea>
+                </div>
+                <div class="form-group">
+                    <label>处理选项：</label>
+                    <div class="checkbox-group">
+                        <label class="checkbox-label">
+                            <input type="checkbox" id="processText" checked>
+                            <span class="checkmark"></span>
+                            处理文本内容
+                        </label>
+                        <label class="checkbox-label">
+                            <input type="checkbox" id="analyzeImages" checked>
+                            <span class="checkmark"></span>
+                            分析图像内容
+                        </label>
+                        <label class="checkbox-label">
+                            <input type="checkbox" id="optimizeStructure">
+                            <span class="checkmark"></span>
+                            优化文档结构
+                        </label>
+                    </div>
+                </div>
+                <div class="form-group">
+                    <label for="textStyle">文本风格：</label>
+                    <select id="textStyle">
+                        <option value="professional">专业</option>
+                        <option value="academic">学术</option>
+                        <option value="casual">休闲</option>
+                        <option value="business">商务</option>
+                    </select>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button class="btn secondary" onclick="closeModal('processModal')">取消</button>
+                <button class="btn primary" onclick="startProcessing()">开始处理</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- 导出选项对话框 -->
+    <div class="modal" id="exportModal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h3>导出文档</h3>
+                <button class="close-btn" onclick="closeModal('exportModal')">
+                    <i class="fas fa-times"></i>
+                </button>
+            </div>
+            <div class="modal-body">
+                <div class="form-group">
+                    <label>导出格式：</label>
+                    <div class="format-options">
+                        <label class="format-option">
+                            <input type="radio" name="exportFormat" value="docx" checked>
+                            <div class="format-card">
+                                <i class="fas fa-file-word"></i>
+                                <span>Word (.docx)</span>
+                            </div>
+                        </label>
+                        <label class="format-option">
+                            <input type="radio" name="exportFormat" value="pdf">
+                            <div class="format-card">
+                                <i class="fas fa-file-pdf"></i>
+                                <span>PDF (.pdf)</span>
+                            </div>
+                        </label>
+                        <label class="format-option">
+                            <input type="radio" name="exportFormat" value="html">
+                            <div class="format-card">
+                                <i class="fas fa-file-code"></i>
+                                <span>HTML (.html)</span>
+                            </div>
+                        </label>
+                    </div>
+                </div>
+                <div class="form-group">
+                    <label for="templateType">模板类型：</label>
+                    <select id="templateType">
+                        <option value="default">默认</option>
+                        <option value="professional">专业</option>
+                        <option value="modern">现代</option>
+                    </select>
+                </div>
+                <div class="form-group">
+                    <label for="exportOptions">导出选项：</label>
+                    <select id="exportOptions">
+                        <option value="standard">标准</option>
+                        <option value="minimal">简化</option>
+                        <option value="detailed">详细</option>
+                    </select>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button class="btn secondary" onclick="closeModal('exportModal')">取消</button>
+                <button class="btn primary" onclick="startExport()">导出</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- 通知容器 -->
+    <div class="notification-container" id="notificationContainer"></div>
+
+    <!-- 隐藏的文件输入 -->
+    <input type="file" id="hiddenFileInput" accept=".docx,.pdf,.txt,.html,.doc" style="display: none;">
+
+    <!-- JavaScript -->
+    <script src="/static/js/app.js"></script>
+    <script src="/static/js/websocket.js"></script>
+    <script src="/static/js/document-handler.js"></script>
+</body>
+</html>
