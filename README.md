@@ -7,9 +7,12 @@
 - **🗣️ 自然语言交互**: 用一句话描述需求，AI自动理解并执行
 - **🎨 智能排版设计**: 自动分析文档结构，生成专业的排版方案
 - **🖼️ 图片统一处理**: 自动调整图片尺寸、添加效果、统一风格
-- **📄 多格式支持**: 输出HTML、Markdown等多种格式
+- **📄 多格式输出**: 支持HTML、PDF、Word、PowerPoint、Markdown
+- **📊 智能内容分析**: 自动分析文档质量，提供优化建议
+- **🎯 模板智能推荐**: 基于内容特征推荐最适合的排版模板
 - **⚡ 批量处理**: 支持批量处理多个文档
-- **🔧 灵活配置**: 支持完整处理、快速格式化、仅图片处理等模式
+- **� 实时预览调整**: 交互式调整和预览功能
+- **💾 会话记录**: 自动保存处理历史和用户偏好
 
 ## 📋 系统要求
 
@@ -43,14 +46,26 @@ export OPENAI_API_KEY="your-api-key-here"
 ### 3. 运行系统
 
 ```bash
-# 交互式模式（推荐新手）
+# 增强交互模式（推荐，包含所有新功能）
+python main.py --enhanced
+
+# 基础交互模式
 python main.py
 
-# 快速处理单个文件
-python main.py -f document.md -i "转换为现代商务风格的HTML文档"
+# 快速处理单个文件（启用分析和模板推荐）
+python main.py -f document.md -i "转换为现代商务风格的HTML文档" --analysis --templates
+
+# 多格式输出
+python main.py -f document.md -i "学术论文格式" -o PDF
 
 # 批量处理
 python main.py -b input_folder output_folder -i "统一格式为学术论文风格"
+
+# 查看支持的格式
+python main.py --formats
+
+# 查看可用模板
+python main.py --template-info
 ```
 
 ## 📖 使用示例
@@ -140,7 +155,31 @@ flowchart LR
 5. **UnifyImagesNode**: 统一图片样式和效果
 6. **GenerateDocumentNode**: 生成最终格式化文档
 
-## 📁 项目结构
+## 🆕 新功能亮点
+
+### � 智能内容分析
+- **文档质量评估**：自动评分文档的可读性、结构性和内容质量
+- **优化建议**：提供具体的改进建议和行动指导
+- **统计分析**：词数、句数、段落分布等详细统计
+
+### 🎯 模板智能推荐
+- **5种专业模板**：商务报告、学术论文、创意设计、技术文档、产品介绍
+- **智能匹配**：基于内容特征和用户指令自动推荐最合适的模板
+- **使用统计**：跟踪模板使用情况和用户评价
+
+### 📄 多格式输出支持
+- **PDF文档**：高质量PDF生成，适合打印和分发
+- **Word文档**：标准DOCX格式，便于进一步编辑
+- **PowerPoint**：自动转换为演示文稿格式
+- **HTML网页**：响应式设计，适合在线展示
+
+### 🔄 增强交互体验
+- **实时预览**：即时查看处理结果
+- **迭代调整**：支持多轮对话式优化
+- **会话保存**：自动保存处理历史
+- **个性化偏好**：记忆用户的样式偏好
+
+## �📁 项目结构
 
 ```
 .
@@ -150,10 +189,17 @@ flowchart LR
 │   ├── __init__.py
 │   ├── call_llm.py       # LLM调用工具
 │   ├── document_processor.py  # 文档处理工具
-│   └── image_processor.py     # 图片处理工具
+│   ├── image_processor.py     # 图片处理工具
+│   ├── content_analyzer.py    # 智能内容分析
+│   ├── format_converter.py    # 多格式转换器
+│   └── template_manager.py    # 模板管理系统
+├── templates/             # 文档模板存储
+├── sessions/              # 会话记录存储
+├── output/               # 输出文件目录
 ├── nodes.py              # 工作流节点定义
 ├── flow.py               # 工作流构建
 ├── main.py               # 主应用程序
+├── interactive_ui.py     # 增强交互界面
 ├── requirements.txt      # 依赖列表
 └── README.md            # 说明文档
 ```
@@ -173,9 +219,11 @@ flowchart LR
 
 ### 支持的输出格式
 
-- HTML（带CSS样式）
-- Markdown（优化后）
-- 其他格式（基础支持）
+- **HTML**：带完整CSS样式的网页文档
+- **PDF**：高质量PDF文档（需要weasyprint）
+- **DOCX**：Microsoft Word格式（需要python-docx）
+- **PPTX**：PowerPoint演示文稿（需要python-pptx）
+- **Markdown**：优化后的Markdown格式
 
 ## 🔧 自定义扩展
 
@@ -274,9 +322,13 @@ tail -f document_processor.log
 ## 💡 使用技巧
 
 1. **明确描述需求**: 越具体的描述，AI理解得越准确
-2. **分步处理**: 复杂文档可以先用简化模式快速查看效果
-3. **批量优化**: 处理多个相似文档时使用批量模式
-4. **样式复用**: 记录满意的指令模板，便于重复使用
+2. **利用文档分析**: 使用 `--analysis` 参数获取优化建议
+3. **善用模板推荐**: 使用 `--templates` 参数获取专业模板建议
+4. **选择合适格式**: 根据用途选择最适合的输出格式
+5. **增强交互模式**: 使用 `--enhanced` 体验完整功能
+6. **批量优化**: 处理多个相似文档时使用批量模式
+7. **样式复用**: 记录满意的指令模板，便于重复使用
+8. **会话管理**: 查看 `sessions/` 目录了解历史处理记录
 
 ---
 
