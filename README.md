@@ -1,135 +1,285 @@
-<div align="center">
-  <img src="https://github.com/The-Pocket/.github/raw/main/assets/title.png" alt="Pocket Flow – 100-line minimalist LLM framework" width="600"/>
-</div>
+# 🎨 智能文档自动排版系统
 
-<!-- For translation, replace English with [English](https://github.com/The-Pocket/PocketFlow/blob/main/README.md), and remove the link for the target language. -->
+> 基于 PocketFlow 框架构建的智能文档处理系统，一句话完成文档格式化、排版和图片统一！
 
-English | [中文](https://github.com/The-Pocket/PocketFlow/blob/main/cookbook/pocketflow-batch/translations/README_CHINESE.md) | [Español](https://github.com/The-Pocket/PocketFlow/blob/main/cookbook/pocketflow-batch/translations/README_SPANISH.md) | [日本語](https://github.com/The-Pocket/PocketFlow/blob/main/cookbook/pocketflow-batch/translations/README_JAPANESE.md) | [Deutsch](https://github.com/The-Pocket/PocketFlow/blob/main/cookbook/pocketflow-batch/translations/README_GERMAN.md) | [Русский](https://github.com/The-Pocket/PocketFlow/blob/main/cookbook/pocketflow-batch/translations/README_RUSSIAN.md) | [Português](https://github.com/The-Pocket/PocketFlow/blob/main/cookbook/pocketflow-batch/translations/README_PORTUGUESE.md) | [Français](https://github.com/The-Pocket/PocketFlow/blob/main/cookbook/pocketflow-batch/translations/README_FRENCH.md) | [한국어](https://github.com/The-Pocket/PocketFlow/blob/main/cookbook/pocketflow-batch/translations/README_KOREAN.md)
+## ✨ 功能特色
 
-![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)
-[![Docs](https://img.shields.io/badge/docs-latest-blue)](https://the-pocket.github.io/PocketFlow/)
- <a href="https://discord.gg/hUHHE9Sa6T">
-    <img src="https://img.shields.io/discord/1346833819172601907?logo=discord&style=flat">
-</a>
+- **🗣️ 自然语言交互**: 用一句话描述需求，AI自动理解并执行
+- **🎨 智能排版设计**: 自动分析文档结构，生成专业的排版方案
+- **🖼️ 图片统一处理**: 自动调整图片尺寸、添加效果、统一风格
+- **📄 多格式支持**: 输出HTML、Markdown等多种格式
+- **⚡ 批量处理**: 支持批量处理多个文档
+- **🔧 灵活配置**: 支持完整处理、快速格式化、仅图片处理等模式
 
-Pocket Flow is a [100-line](https://github.com/The-Pocket/PocketFlow/blob/main/pocketflow/__init__.py) minimalist LLM framework
+## 📋 系统要求
 
-- **Lightweight**: Just 100 lines. Zero bloat, zero dependencies, zero vendor lock-in.
-  
-- **Expressive**: Everything you love—([Multi-](https://the-pocket.github.io/PocketFlow/design_pattern/multi_agent.html))[Agents](https://the-pocket.github.io/PocketFlow/design_pattern/agent.html), [Workflow](https://the-pocket.github.io/PocketFlow/design_pattern/workflow.html), [RAG](https://the-pocket.github.io/PocketFlow/design_pattern/rag.html), and more.
+- Python 3.8+
+- OpenAI API Key（用于LLM功能）
+- 网络连接（API调用）
 
-- **[Agentic Coding](https://zacharyhuang.substack.com/p/agentic-coding-the-most-fun-way-to)**: Let AI Agents (e.g., Cursor AI) build Agents—10x productivity boost!
+## 🚀 快速开始
 
-Get started with Pocket Flow:
-- To install, ```pip install pocketflow```or just copy the [source code](https://github.com/The-Pocket/PocketFlow/blob/main/pocketflow/__init__.py) (only 100 lines).
-- To learn more, check out the [documentation](https://the-pocket.github.io/PocketFlow/). To learn the motivation, read the [story](https://zacharyhuang.substack.com/p/i-built-an-llm-framework-in-just).
-- Have questions? Check out this [AI Assistant](https://chatgpt.com/g/g-677464af36588191b9eba4901946557b-pocket-flow-assistant), or [create an issue!](https://github.com/The-Pocket/PocketFlow/issues/new)
-- 🎉 Join our [Discord](https://discord.gg/hUHHE9Sa6T) to connect with other developers building with Pocket Flow!
-- 🎉 Pocket Flow is initially Python, but we now have [Typescript](https://github.com/The-Pocket/PocketFlow-Typescript), [Java](https://github.com/The-Pocket/PocketFlow-Java), [C++](https://github.com/The-Pocket/PocketFlow-CPP) and [Go](https://github.com/The-Pocket/PocketFlow-Go) versions!
+### 1. 安装依赖
 
-## Why Pocket Flow?
+```bash
+# 克隆项目（如果是本地开发）
+# git clone <repository-url>
+# cd document-processor
 
-Current LLM frameworks are bloated... You only need 100 lines for LLM Framework!
+# 安装依赖
+pip install -r requirements.txt
+```
 
-<div align="center">
-  <img src="https://github.com/The-Pocket/.github/raw/main/assets/meme.jpg" width="400"/>
+### 2. 设置API密钥
 
+```bash
+# 设置OpenAI API密钥
+export OPENAI_API_KEY="your-api-key-here"
 
-  |                | **Abstraction**          | **App-Specific Wrappers**                                      | **Vendor-Specific Wrappers**                                    | **Lines**       | **Size**    |
-|----------------|:-----------------------------: |:-----------------------------------------------------------:|:------------------------------------------------------------:|:---------------:|:----------------------------:|
-| LangChain  | Agent, Chain               | Many <br><sup><sub>(e.g., QA, Summarization)</sub></sup>              | Many <br><sup><sub>(e.g., OpenAI, Pinecone, etc.)</sub></sup>                   | 405K          | +166MB                     |
-| CrewAI     | Agent, Chain            | Many <br><sup><sub>(e.g., FileReadTool, SerperDevTool)</sub></sup>         | Many <br><sup><sub>(e.g., OpenAI, Anthropic, Pinecone, etc.)</sub></sup>        | 18K           | +173MB                     |
-| SmolAgent   | Agent                      | Some <br><sup><sub>(e.g., CodeAgent, VisitWebTool)</sub></sup>         | Some <br><sup><sub>(e.g., DuckDuckGo, Hugging Face, etc.)</sub></sup>           | 8K            | +198MB                     |
-| LangGraph   | Agent, Graph           | Some <br><sup><sub>(e.g., Semantic Search)</sub></sup>                     | Some <br><sup><sub>(e.g., PostgresStore, SqliteSaver, etc.) </sub></sup>        | 37K           | +51MB                      |
-| AutoGen    | Agent                | Some <br><sup><sub>(e.g., Tool Agent, Chat Agent)</sub></sup>              | Many <sup><sub>[Optional]<br> (e.g., OpenAI, Pinecone, etc.)</sub></sup>        | 7K <br><sup><sub>(core-only)</sub></sup>    | +26MB <br><sup><sub>(core-only)</sub></sup>          |
-| **PocketFlow** | **Graph**                    | **None**                                                 | **None**                                                  | **100**       | **+56KB**                  |
+# Windows用户可以使用
+# set OPENAI_API_KEY=your-api-key-here
+```
 
-</div>
+### 3. 运行系统
 
-## How does Pocket Flow work?
+```bash
+# 交互式模式（推荐新手）
+python main.py
 
-The [100 lines](https://github.com/The-Pocket/PocketFlow/blob/main/pocketflow/__init__.py) capture the core abstraction of LLM frameworks: Graph!
-<br>
-<div align="center">
-  <img src="https://github.com/The-Pocket/.github/raw/main/assets/abstraction.png" width="900"/>
-</div>
-<br>
+# 快速处理单个文件
+python main.py -f document.md -i "转换为现代商务风格的HTML文档"
 
-From there, it's easy to implement popular design patterns like ([Multi-](https://the-pocket.github.io/PocketFlow/design_pattern/multi_agent.html))[Agents](https://the-pocket.github.io/PocketFlow/design_pattern/agent.html), [Workflow](https://the-pocket.github.io/PocketFlow/design_pattern/workflow.html), [RAG](https://the-pocket.github.io/PocketFlow/design_pattern/rag.html), etc.
-<br>
-<div align="center">
-  <img src="https://github.com/The-Pocket/.github/raw/main/assets/design.png" width="900"/>
-</div>
-<br>
-✨ Below are basic tutorials:
+# 批量处理
+python main.py -b input_folder output_folder -i "统一格式为学术论文风格"
+```
 
-<div align="center">
-  
-|  Name  | Difficulty    |  Description  |  
-| :-------------:  | :-------------: | :--------------------- |  
-| [Chat](https://github.com/The-Pocket/PocketFlow/tree/main/cookbook/pocketflow-chat) | ☆☆☆ <sup>*Dummy*</sup>  | A basic chat bot with conversation history |
-| [Structured Output](https://github.com/The-Pocket/PocketFlow/tree/main/cookbook/pocketflow-structured-output) | ☆☆☆ <sup>*Dummy*</sup> | Extracting structured data from resumes by prompting |
-| [Workflow](https://github.com/The-Pocket/PocketFlow/tree/main/cookbook/pocketflow-workflow) | ☆☆☆ <sup>*Dummy*</sup> | A writing workflow that outlines, writes content, and applies styling |
-| [Agent](https://github.com/The-Pocket/PocketFlow/tree/main/cookbook/pocketflow-agent) | ☆☆☆ <sup>*Dummy*</sup>  | A research agent that can search the web and answer questions |
-| [RAG](https://github.com/The-Pocket/PocketFlow/tree/main/cookbook/pocketflow-rag) | ☆☆☆ <sup>*Dummy*</sup> | A simple Retrieval-augmented Generation process |
-| [Batch](https://github.com/The-Pocket/PocketFlow/tree/main/cookbook/pocketflow-batch) | ☆☆☆ <sup>*Dummy*</sup> | A batch processor that translates markdown into multiple languages |
-| [Streaming](https://github.com/The-Pocket/PocketFlow/tree/main/cookbook/pocketflow-llm-streaming) | ☆☆☆ <sup>*Dummy*</sup> | A real-time LLM streaming demo with user interrupt capability |
-| [Chat Guardrail](https://github.com/The-Pocket/PocketFlow/tree/main/cookbook/pocketflow-chat-guardrail) | ☆☆☆ <sup>*Dummy*</sup> | A travel advisor chatbot that only processes travel-related queries |
-| [Majority Vote](https://github.com/The-Pocket/PocketFlow/tree/main/cookbook/pocketflow-majority-vote) | ☆☆☆ <sup>*Dummy*</sup> | Improve reasoning accuracy by aggregating multiple solution attempts |
-| [Map-Reduce](https://github.com/The-Pocket/PocketFlow/tree/main/cookbook/pocketflow-map-reduce) | ☆☆☆ <sup>*Dummy*</sup>  | Batch resume qualification using map-reduce pattern |
-| [CLI HITL](https://github.com/The-Pocket/PocketFlow/tree/main/cookbook/pocketflow-cli-hitl) | ☆☆☆ <sup>*Dummy*</sup>  | A command-line joke generator with human-in-the-loop feedback |
-| [Multi-Agent](https://github.com/The-Pocket/PocketFlow/tree/main/cookbook/pocketflow-multi-agent) | ★☆☆ <sup>*Beginner*</sup> | A Taboo word game for async communication between 2 agents |
-| [Supervisor](https://github.com/The-Pocket/PocketFlow/tree/main/cookbook/pocketflow-supervisor) | ★☆☆ <sup>*Beginner*</sup> | Research agent is getting unreliable... Let's build a supervision process|
-| [Parallel](https://github.com/The-Pocket/PocketFlow/tree/main/cookbook/pocketflow-parallel-batch) |  ★☆☆ <sup>*Beginner*</sup> | A parallel execution demo that shows 3x speedup |
-| [Parallel Flow](https://github.com/The-Pocket/PocketFlow/tree/main/cookbook/pocketflow-parallel-batch-flow) | ★☆☆ <sup>*Beginner*</sup> | A parallel image processing showing 8x speedup |
-| [Thinking](https://github.com/The-Pocket/PocketFlow/tree/main/cookbook/pocketflow-thinking) |  ★☆☆ <sup>*Beginner*</sup> | Solve complex reasoning problems through Chain-of-Thought |
-| [Memory](https://github.com/The-Pocket/PocketFlow/tree/main/cookbook/pocketflow-chat-memory) |  ★☆☆ <sup>*Beginner*</sup> | A chat bot with short-term and long-term memory |
-| [Text2SQL](https://github.com/The-Pocket/PocketFlow/tree/main/cookbook/pocketflow-text2sql) |  ★☆☆ <sup>*Beginner*</sup>  | Convert natural language to SQL queries with an auto-debug loop |
-| [Code Generator](https://github.com/The-Pocket/PocketFlow/tree/main/cookbook/pocketflow-code-generator) | ★☆☆ <sup>*Beginner*</sup> | Generate test cases, implement solutions, and iteratively improve code |
-| [MCP](https://github.com/The-Pocket/PocketFlow/tree/main/cookbook/pocketflow-mcp) |  ★☆☆ <sup>*Beginner*</sup> |  Agent using Model Context Protocol for numerical operations |
-| [A2A](https://github.com/The-Pocket/PocketFlow/tree/main/cookbook/pocketflow-a2a) |  ★☆☆ <sup>*Beginner*</sup> | Agent wrapped with A2A protocol for inter-agent communication |
-| [Streamlit FSM](https://github.com/The-Pocket/PocketFlow/tree/main/cookbook/pocketflow-streamlit-fsm) | ★☆☆ <sup>*Beginner*</sup> | Streamlit app with finite state machine for HITL image generation |
-| [FastAPI WebSocket](https://github.com/The-Pocket/PocketFlow/tree/main/cookbook/pocketflow-fastapi-websocket) | ★☆☆ <sup>*Beginner*</sup> | Real-time chat interface with streaming LLM responses via WebSocket |
-| [FastAPI Background](https://github.com/The-Pocket/PocketFlow/tree/main/cookbook/pocketflow-fastapi-background) | ★☆☆ <sup>*Beginner*</sup> | FastAPI app with background jobs and real-time progress via SSE |
-| [Voice Chat](https://github.com/The-Pocket/PocketFlow/tree/main/cookbook/pocketflow-voice-chat) | ★☆☆ <sup>*Beginner*</sup> | An interactive voice chat application with VAD, STT, LLM, and TTS. |
+## 📖 使用示例
 
-</div>
+### 交互式模式
 
-👀 Want to see other tutorials for dummies? [Create an issue!](https://github.com/The-Pocket/PocketFlow/issues/new)
+```bash
+$ python main.py
 
-## How to Use Pocket Flow?
+============================================================
+🎨 智能文档自动排版系统
+============================================================
+让AI帮您一句话完成文档的格式化和排版！
 
-🚀 Through **Agentic Coding**—the fastest LLM App development paradigm-where *humans design* and *agents code*!
+📝 请描述您想要的文档格式（例如：
+   • '请帮我生成一个现代商务风格的HTML文档，图片统一加圆角边框'
+   • '转换成学术论文格式，使用蓝白配色方案'
+   • '制作一个创意设计文档，图片添加阴影效果'
 
-<br>
-<div align="center">
-  <a href="https://zacharyhuang.substack.com/p/agentic-coding-the-most-fun-way-to" target="_blank">
-    <img src="https://substackcdn.com/image/fetch/f_auto,q_auto:good,fl_progressive:steep/https%3A%2F%2Fsubstack-post-media.s3.amazonaws.com%2Fpublic%2Fimages%2F423a39af-49e8-483b-bc5a-88cc764350c6_1050x588.png" width="700" alt="IMAGE ALT TEXT" style="cursor: pointer;">
-  </a>
-</div>
-<br>
+💬 您的需求: 请帮我生成一个现代商务风格的HTML文档，图片统一加圆角边框
+```
 
-✨ Below are examples of more complex LLM Apps:
+### 命令行模式
 
-<div align="center">
-  
-|  App Name     |  Difficulty    | Topics  | Human Design | Agent Code |
-| :-------------:  | :-------------: | :---------------------: |  :---: |  :---: |
-| [Website Chatbot](https://github.com/The-Pocket/PocketFlow-Tutorial-Website-Chatbot) <br> <sup><sub>Turn your website into a 24/7 customer support genius</sup></sub> | ★★☆ <br> *Medium* | [Agent](https://the-pocket.github.io/PocketFlow/design_pattern/agent.html) <br> [RAG](https://the-pocket.github.io/PocketFlow/design_pattern/rag.html) | [Design Doc](https://github.com/The-Pocket/PocketFlow-Tutorial-Website-Chatbot/blob/main/docs/design.md) | [Flow Code](https://github.com/The-Pocket/PocketFlow-Tutorial-Website-Chatbot/blob/main/flow.py)
-| [Danganronpa Simulator](https://github.com/The-Pocket/PocketFlow-Tutorial-Danganronpa-Simulator) <br> <sup><sub>Forget the Turing test. Danganronpa, the ultimate AI experiment!</sup></sub> | ★★★ <br> *Advanced*   | [Workflow](https://the-pocket.github.io/PocketFlow/design_pattern/workflow.html) <br> [Agent](https://the-pocket.github.io/PocketFlow/design_pattern/agent.html) | [Design Doc](https://github.com/The-Pocket/PocketFlow-Tutorial-Danganronpa-Simulator/blob/main/docs/design.md) | [Flow Code](https://github.com/The-Pocket/PocketFlow-Tutorial-Danganronpa-Simulator/blob/main/flow.py)
-| [Codebase Knowledge Builder](https://github.com/The-Pocket/Tutorial-Codebase-Knowledge) <br> <sup><sub>Life's too short to stare at others' code in confusion</sup></sub> |  ★★☆ <br> *Medium* | [Workflow](https://the-pocket.github.io/PocketFlow/design_pattern/workflow.html) | [Design Doc](https://github.com/The-Pocket/Tutorial-Codebase-Knowledge/blob/main/docs/design.md) | [Flow Code](https://github.com/The-Pocket/Tutorial-Codebase-Knowledge/blob/main/flow.py)
-| [Build Cursor with Cursor](https://github.com/The-Pocket/Tutorial-Cursor) <br> <sup><sub>We'll reach the singularity soon ...</sup></sub> | ★★★ <br> *Advanced*   | [Agent](https://the-pocket.github.io/PocketFlow/design_pattern/agent.html) | [Design Doc](https://github.com/The-Pocket/Tutorial-Cursor/blob/main/docs/design.md) | [Flow Code](https://github.com/The-Pocket/Tutorial-Cursor/blob/main/flow.py)
-| [Ask AI Paul Graham](https://github.com/The-Pocket/Tutorial-YC-Partner) <br> <sup><sub>Ask AI Paul Graham, in case you don't get in</sup></sub> | ★★☆ <br> *Medium*  | [RAG](https://the-pocket.github.io/PocketFlow/design_pattern/rag.html) <br> [Map Reduce](https://the-pocket.github.io/PocketFlow/design_pattern/mapreduce.html) <br> [TTS](https://the-pocket.github.io/PocketFlow/utility_function/text_to_speech.html) | [Design Doc](https://github.com/The-Pocket/Tutorial-AI-Paul-Graham/blob/main/docs/design.md) | [Flow Code](https://github.com/The-Pocket/Tutorial-AI-Paul-Graham/blob/main/flow.py)
-| [Youtube Summarizer](https://github.com/The-Pocket/Tutorial-Youtube-Made-Simple)  <br> <sup><sub> Explain YouTube Videos to you like you're 5 </sup></sub> | ★☆☆ <br> *Beginner*   | [Map Reduce](https://the-pocket.github.io/PocketFlow/design_pattern/mapreduce.html) |  [Design Doc](https://github.com/The-Pocket/Tutorial-Youtube-Made-Simple/blob/main/docs/design.md) | [Flow Code](https://github.com/The-Pocket/Tutorial-Youtube-Made-Simple/blob/main/flow.py)
-| [Cold Opener Generator](https://github.com/The-Pocket/Tutorial-Cold-Email-Personalization)  <br> <sup><sub> Instant icebreakers that turn cold leads hot </sup></sub> | ★☆☆ <br> *Beginner*   | [Map Reduce](https://the-pocket.github.io/PocketFlow/design_pattern/mapreduce.html) <br> [Web Search](https://the-pocket.github.io/PocketFlow/utility_function/websearch.html) |  [Design Doc](https://github.com/The-Pocket/Tutorial-Cold-Email-Personalization/blob/master/docs/design.md) | [Flow Code](https://github.com/The-Pocket/Tutorial-Cold-Email-Personalization/blob/master/flow.py)
+```bash
+# 处理Markdown文件
+python main.py -f report.md -i "转换为学术论文格式，使用蓝白配色"
 
+# 仅图片处理
+python main.py -f document.md -i "图片添加阴影效果" -t image
 
-</div>
+# 快速格式化
+python main.py -f text.md -i "现代简约风格" -t simple
+```
 
-- Want to learn **Agentic Coding**?
+### 批量处理
 
-  - Check out [my YouTube](https://www.youtube.com/@ZacharyLLM?sub_confirmation=1) for video tutorial on how some apps above are made!
+```bash
+# 批量处理目录中的所有文档
+python main.py -b ./documents ./output -i "统一转换为商务报告格式"
+```
 
-  - Want to build your own LLM App? Read this [post](https://zacharyhuang.substack.com/p/agentic-coding-the-most-fun-way-to)! Start with [this template](https://github.com/The-Pocket/PocketFlow-Template-Python)!
+## 🎯 支持的指令示例
+
+### 风格指令
+- "现代商务风格"
+- "学术论文格式"
+- "创意设计文档"
+- "技术报告风格"
+- "简约清新风格"
+
+### 配色指令
+- "蓝白配色方案"
+- "深色主题"
+- "暖色调设计"
+- "科技感配色"
+
+### 图片处理指令
+- "图片统一加圆角边框"
+- "添加阴影效果"
+- "图片居中对齐"
+- "统一图片尺寸"
+
+### 复合指令
+- "生成现代商务风格的HTML文档，图片加圆角边框，使用蓝白配色"
+- "转换为学术论文格式，图片添加阴影，段落间距加大"
+
+## 🏗️ 系统架构
+
+系统采用 **工作流（Workflow）** 设计模式，包含以下核心节点：
+
+```mermaid
+flowchart LR
+    A[解析用户需求] --> B[分析文档结构]
+    B --> C[设计排版方案]
+    C --> D[处理文本格式]
+    D --> E[统一图片样式]
+    E --> F[生成最终文档]
+```
+
+### 核心组件
+
+1. **ParseRequirementNode**: 解析用户的自然语言需求
+2. **AnalyzeDocumentNode**: 分析文档结构和内容
+3. **DesignLayoutNode**: 设计排版方案和样式
+4. **ProcessTextNode**: 处理文本格式和结构
+5. **UnifyImagesNode**: 统一图片样式和效果
+6. **GenerateDocumentNode**: 生成最终格式化文档
+
+## 📁 项目结构
+
+```
+.
+├── docs/
+│   └── design.md          # 系统设计文档
+├── utils/
+│   ├── __init__.py
+│   ├── call_llm.py       # LLM调用工具
+│   ├── document_processor.py  # 文档处理工具
+│   └── image_processor.py     # 图片处理工具
+├── nodes.py              # 工作流节点定义
+├── flow.py               # 工作流构建
+├── main.py               # 主应用程序
+├── requirements.txt      # 依赖列表
+└── README.md            # 说明文档
+```
+
+## ⚙️ 配置选项
+
+### 处理类型
+
+- **complete**: 完整处理（包含图片优化）
+- **simple**: 快速格式化（仅文本）
+- **image**: 仅图片处理
+
+### 支持的输入格式
+
+- Markdown (`.md`, `.markdown`)
+- 纯文本 (`.txt`)
+
+### 支持的输出格式
+
+- HTML（带CSS样式）
+- Markdown（优化后）
+- 其他格式（基础支持）
+
+## 🔧 自定义扩展
+
+### 添加新的文档格式支持
+
+在 `utils/document_processor.py` 中添加新的解析函数：
+
+```python
+def parse_your_format(content: str) -> Dict[str, Any]:
+    # 实现您的格式解析逻辑
+    return document_structure
+```
+
+### 添加新的图片效果
+
+在 `utils/image_processor.py` 中添加新的处理函数：
+
+```python
+def add_your_effect(image: Image.Image, **kwargs) -> Image.Image:
+    # 实现您的图片效果
+    return processed_image
+```
+
+### 自定义工作流
+
+在 `flow.py` 中创建新的工作流：
+
+```python
+def create_custom_flow():
+    # 创建自定义节点组合
+    node1 = CustomNode()
+    node2 = AnotherNode()
+    
+    node1 >> node2
+    return Flow(start=node1)
+```
+
+## 📊 性能优化
+
+- **重试机制**: 内置LLM调用重试，提高稳定性
+- **错误处理**: 完善的错误处理和回退机制
+- **日志记录**: 详细的处理日志，便于调试
+- **批量处理**: 支持大规模文档批量处理
+
+## 🐛 故障排除
+
+### 常见问题
+
+1. **API密钥错误**
+   ```
+   ⚠️ 警告: 未设置 OPENAI_API_KEY 环境变量
+   ```
+   解决方案: 正确设置OpenAI API密钥
+
+2. **依赖包缺失**
+   ```
+   ModuleNotFoundError: No module named 'xxx'
+   ```
+   解决方案: 运行 `pip install -r requirements.txt`
+
+3. **文件路径错误**
+   ```
+   ❌ 文件不存在: document.md
+   ```
+   解决方案: 检查文件路径是否正确
+
+### 调试模式
+
+查看详细日志：
+
+```bash
+# 日志会自动保存到 document_processor.log
+tail -f document_processor.log
+```
+
+## 🤝 贡献指南
+
+欢迎贡献代码和建议！
+
+1. Fork 项目
+2. 创建功能分支 (`git checkout -b feature/amazing-feature`)
+3. 提交更改 (`git commit -m 'Add amazing feature'`)
+4. 推送到分支 (`git push origin feature/amazing-feature`)
+5. 创建 Pull Request
+
+## 📄 许可证
+
+本项目采用 MIT 许可证 - 查看 [LICENSE](LICENSE) 文件了解详情
+
+## 🔗 相关链接
+
+- [PocketFlow 框架](https://github.com/The-Pocket/PocketFlow)
+- [OpenAI API 文档](https://platform.openai.com/docs)
+- [项目设计文档](docs/design.md)
+
+## 💡 使用技巧
+
+1. **明确描述需求**: 越具体的描述，AI理解得越准确
+2. **分步处理**: 复杂文档可以先用简化模式快速查看效果
+3. **批量优化**: 处理多个相似文档时使用批量模式
+4. **样式复用**: 记录满意的指令模板，便于重复使用
+
+---
+
+**让AI帮您轻松完成文档排版，专注于内容创作！** 🚀
 
 

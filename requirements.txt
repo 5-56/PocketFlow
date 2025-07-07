@@ -1,0 +1,24 @@
+# PocketFlow 框架
+pocketflow
+
+# OpenAI API
+openai>=1.0.0
+
+# 文档处理
+markdown>=3.4.0
+Pillow>=9.0.0
+
+# 实用工具
+pyyaml>=6.0
+pathlib
+
+# 可选依赖（用于扩展功能）
+# pypdf2>=3.0.0  # PDF处理
+# python-docx>=0.8.11  # Word文档处理
+# beautifulsoup4>=4.11.0  # HTML解析
+# reportlab>=3.6.0  # PDF生成
+
+# 开发工具（可选）
+# pytest>=7.0.0
+# black>=22.0.0
+# flake8>=4.0.0
