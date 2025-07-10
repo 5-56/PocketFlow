@@ -1,0 +1,775 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>智能文档自动排版系统</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://unpkg.com/alpinejs@3.x.x/dist/cdn.min.js" defer></script>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <style>
+        body { font-family: 'Inter', sans-serif; }
+        .animate-fade-in { animation: fadeIn 0.5s ease-in; }
+        .animate-slide-up { animation: slideUp 0.3s ease-out; }
+        .animate-pulse-slow { animation: pulse 2s cubic-bezier(0.4, 0, 0.6, 1) infinite; }
+        @keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
+        @keyframes slideUp { from { transform: translateY(20px); opacity: 0; } to { transform: translateY(0); opacity: 1; } }
+        .gradient-bg { background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); }
+        .glass-effect { backdrop-filter: blur(10px); background: rgba(255, 255, 255, 0.1); }
+        .progress-bar { background: linear-gradient(90deg, #3b82f6, #8b5cf6); }
+        .code-block { font-family: 'Fira Code', monospace; }
+    </style>
+</head>
+<body class="bg-gray-50 text-gray-900" x-data="documentProcessor()">
+    <!-- 导航栏 -->
+    <nav class="bg-white shadow-lg sticky top-0 z-50">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+            <div class="flex justify-between h-16">
+                <div class="flex items-center">
+                    <div class="flex-shrink-0">
+                        <h1 class="text-2xl font-bold text-gray-900">🎨 智能文档排版</h1>
+                    </div>
+                </div>
+                <div class="flex items-center space-x-4">
+                    <button @click="showSystemStatus = true" class="text-gray-700 hover:text-blue-600 transition">
+                        <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z"></path>
+                        </svg>
+                    </button>
+                    <div class="flex items-center space-x-2">
+                        <div class="w-3 h-3 rounded-full" :class="connectionStatus === 'connected' ? 'bg-green-500' : 'bg-red-500'"></div>
+                        <span class="text-sm" x-text="connectionStatus === 'connected' ? '已连接' : '未连接'"></span>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </nav>
+
+    <!-- 主要内容区域 -->
+    <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+        <div class="grid grid-cols-1 lg:grid-cols-3 gap-8">
+            
+            <!-- 左侧输入区域 -->
+            <div class="lg:col-span-2">
+                <div class="bg-white rounded-xl shadow-lg p-6">
+                    <div class="mb-6">
+                        <h2 class="text-2xl font-semibold text-gray-900 mb-4">文档处理</h2>
+                        
+                        <!-- 模式选择 -->
+                        <div class="flex space-x-4 mb-6">
+                            <button 
+                                @click="processingMode = 'single'" 
+                                :class="processingMode === 'single' ? 'bg-blue-600 text-white' : 'bg-gray-200 text-gray-700'"
+                                class="px-4 py-2 rounded-lg font-medium transition">
+                                单文档处理
+                            </button>
+                            <button 
+                                @click="processingMode = 'batch'" 
+                                :class="processingMode === 'batch' ? 'bg-blue-600 text-white' : 'bg-gray-200 text-gray-700'"
+                                class="px-4 py-2 rounded-lg font-medium transition">
+                                批量处理
+                            </button>
+                        </div>
+
+                        <!-- 单文档模式 -->
+                        <div x-show="processingMode === 'single'" class="space-y-4">
+                            <!-- 文件上传 -->
+                            <div class="border-2 border-dashed border-gray-300 rounded-lg p-6 text-center hover:border-blue-400 transition">
+                                <input type="file" @change="handleFileUpload" accept=".md,.txt,.markdown" class="hidden" id="fileInput">
+                                <label for="fileInput" class="cursor-pointer">
+                                    <svg class="mx-auto h-12 w-12 text-gray-400 mb-4" stroke="currentColor" fill="none" viewBox="0 0 48 48">
+                                        <path d="M28 8H12a4 4 0 00-4 4v20m32-12v8m0 0v8a4 4 0 01-4 4H12a4 4 0 01-4-4v-4m32-4l-3.172-3.172a4 4 0 00-5.656 0L28 28M8 32l9.172-9.172a4 4 0 015.656 0L28 28m0 0l4 4m4-24h8m-4-4v8m-12 4h.02" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" />
+                                    </svg>
+                                    <p class="text-lg font-medium text-gray-900">点击上传文档</p>
+                                    <p class="text-sm text-gray-500">支持 Markdown、TXT 格式</p>
+                                </label>
+                            </div>
+
+                            <!-- 文档内容输入 -->
+                            <div>
+                                <label class="block text-sm font-medium text-gray-700 mb-2">文档内容</label>
+                                <textarea 
+                                    x-model="documentContent"
+                                    rows="12" 
+                                    class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                                    placeholder="在此输入或粘贴您的文档内容...">
+                                </textarea>
+                            </div>
+
+                            <!-- 处理指令 -->
+                            <div>
+                                <label class="block text-sm font-medium text-gray-700 mb-2">处理指令</label>
+                                <input 
+                                    type="text" 
+                                    x-model="instruction"
+                                    class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+                                    placeholder="例如：转换为现代商务风格的HTML文档，图片加圆角边框">
+                            </div>
+
+                            <!-- 高级选项 -->
+                            <div class="grid grid-cols-2 gap-4">
+                                <div>
+                                    <label class="block text-sm font-medium text-gray-700 mb-2">输出格式</label>
+                                    <select x-model="outputFormat" class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500">
+                                        <option value="HTML">HTML</option>
+                                        <option value="MARKDOWN">Markdown</option>
+                                        <option value="PDF">PDF</option>
+                                    </select>
+                                </div>
+                                <div>
+                                    <label class="block text-sm font-medium text-gray-700 mb-2">处理策略</label>
+                                    <select x-model="processingStrategy" class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500">
+                                        <option value="auto">智能选择</option>
+                                        <option value="complete">完整处理</option>
+                                        <option value="quick">快速处理</option>
+                                        <option value="text_only">仅文本</option>
+                                    </select>
+                                </div>
+                            </div>
+
+                            <!-- 处理按钮 -->
+                            <button 
+                                @click="processDocument"
+                                :disabled="isProcessing || !documentContent.trim()"
+                                class="w-full bg-blue-600 hover:bg-blue-700 disabled:bg-gray-400 text-white py-3 px-6 rounded-lg font-medium transition flex items-center justify-center">
+                                <span x-show="!isProcessing">🚀 开始处理</span>
+                                <span x-show="isProcessing" class="flex items-center">
+                                    <svg class="animate-spin -ml-1 mr-3 h-5 w-5 text-white" fill="none" viewBox="0 0 24 24">
+                                        <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+                                        <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                                    </svg>
+                                    处理中...
+                                </span>
+                            </button>
+                        </div>
+
+                        <!-- 批量处理模式 -->
+                        <div x-show="processingMode === 'batch'" class="space-y-4">
+                            <div class="bg-blue-50 p-4 rounded-lg">
+                                <h3 class="font-medium text-blue-800 mb-2">批量处理</h3>
+                                <p class="text-sm text-blue-600">上传多个文档进行批量处理，系统将并行处理以提高效率。</p>
+                            </div>
+                            
+                            <div>
+                                <label class="block text-sm font-medium text-gray-700 mb-2">批处理指令</label>
+                                <input 
+                                    type="text" 
+                                    x-model="batchInstruction"
+                                    class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+                                    placeholder="例如：统一转换为企业标准格式">
+                            </div>
+
+                            <div class="grid grid-cols-2 gap-4">
+                                <div>
+                                    <label class="block text-sm font-medium text-gray-700 mb-2">批处理策略</label>
+                                    <select x-model="batchStrategy" class="w-full px-3 py-2 border border-gray-300 rounded-lg">
+                                        <option value="quick">快速处理</option>
+                                        <option value="complete">完整处理</option>
+                                    </select>
+                                </div>
+                                <div>
+                                    <label class="block text-sm font-medium text-gray-700 mb-2">并发数</label>
+                                    <select x-model="maxConcurrent" class="w-full px-3 py-2 border border-gray-300 rounded-lg">
+                                        <option value="2">2</option>
+                                        <option value="3">3</option>
+                                        <option value="5">5</option>
+                                    </select>
+                                </div>
+                            </div>
+
+                            <button 
+                                @click="batchProcess"
+                                :disabled="isProcessing || batchDocuments.length === 0"
+                                class="w-full bg-purple-600 hover:bg-purple-700 disabled:bg-gray-400 text-white py-3 px-6 rounded-lg font-medium transition">
+                                🔄 批量处理 (<span x-text="batchDocuments.length"></span> 个文档)
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- 右侧状态和结果区域 -->
+            <div class="space-y-6">
+                
+                <!-- 处理进度 -->
+                <div x-show="isProcessing" class="bg-white rounded-xl shadow-lg p-6 animate-slide-up">
+                    <h3 class="text-lg font-semibold text-gray-900 mb-4">处理进度</h3>
+                    
+                    <div class="mb-4">
+                        <div class="flex justify-between text-sm text-gray-600 mb-1">
+                            <span>进度</span>
+                            <span x-text="Math.round(progress) + '%'"></span>
+                        </div>
+                        <div class="w-full bg-gray-200 rounded-full h-2">
+                            <div class="progress-bar h-2 rounded-full transition-all duration-300" :style="'width: ' + progress + '%'"></div>
+                        </div>
+                    </div>
+                    
+                    <div class="text-sm text-gray-600">
+                        <p x-text="currentMessage"></p>
+                    </div>
+
+                    <button @click="cancelProcessing" class="mt-4 w-full bg-red-600 hover:bg-red-700 text-white py-2 px-4 rounded-lg text-sm">
+                        取消处理
+                    </button>
+                </div>
+
+                <!-- 快速模板 -->
+                <div class="bg-white rounded-xl shadow-lg p-6">
+                    <h3 class="text-lg font-semibold text-gray-900 mb-4">快速模板</h3>
+                    <div class="space-y-3">
+                        <template x-for="template in templates">
+                            <button 
+                                @click="applyTemplate(template)"
+                                class="w-full text-left p-3 border border-gray-200 rounded-lg hover:border-blue-300 hover:bg-blue-50 transition">
+                                <div class="font-medium text-gray-900" x-text="template.name"></div>
+                                <div class="text-sm text-gray-500" x-text="template.description"></div>
+                            </button>
+                        </template>
+                    </div>
+                </div>
+
+                <!-- 系统状态 -->
+                <div class="bg-white rounded-xl shadow-lg p-6">
+                    <h3 class="text-lg font-semibold text-gray-900 mb-4">系统状态</h3>
+                    <div class="space-y-3 text-sm">
+                        <div class="flex justify-between">
+                            <span class="text-gray-600">活跃会话</span>
+                            <span class="font-medium" x-text="systemStatus.activeSessions"></span>
+                        </div>
+                        <div class="flex justify-between">
+                            <span class="text-gray-600">已处理文档</span>
+                            <span class="font-medium" x-text="systemStatus.totalProcessed"></span>
+                        </div>
+                        <div class="flex justify-between">
+                            <span class="text-gray-600">缓存命中率</span>
+                            <span class="font-medium" x-text="systemStatus.cacheHitRate"></span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- 结果显示区域 -->
+        <div x-show="result" class="mt-8 bg-white rounded-xl shadow-lg p-6 animate-fade-in">
+            <div class="flex justify-between items-center mb-6">
+                <h3 class="text-2xl font-semibold text-gray-900">处理结果</h3>
+                <div class="flex space-x-2">
+                    <button @click="downloadResult" class="bg-green-600 hover:bg-green-700 text-white px-4 py-2 rounded-lg text-sm">
+                        📥 下载
+                    </button>
+                    <button @click="shareResult" class="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-lg text-sm">
+                        🔗 分享
+                    </button>
+                </div>
+            </div>
+
+            <!-- 结果选项卡 -->
+            <div class="border-b border-gray-200 mb-6">
+                <nav class="flex space-x-8">
+                    <button 
+                        @click="activeTab = 'preview'"
+                        :class="activeTab === 'preview' ? 'border-blue-600 text-blue-600' : 'border-transparent text-gray-500'"
+                        class="py-2 px-1 border-b-2 font-medium text-sm">
+                        预览
+                    </button>
+                    <button 
+                        @click="activeTab = 'code'"
+                        :class="activeTab === 'code' ? 'border-blue-600 text-blue-600' : 'border-transparent text-gray-500'"
+                        class="py-2 px-1 border-b-2 font-medium text-sm">
+                        源码
+                    </button>
+                    <button 
+                        @click="activeTab = 'analysis'"
+                        :class="activeTab === 'analysis' ? 'border-blue-600 text-blue-600' : 'border-transparent text-gray-500'"
+                        class="py-2 px-1 border-b-2 font-medium text-sm">
+                        分析报告
+                    </button>
+                </nav>
+            </div>
+
+            <!-- 选项卡内容 -->
+            <div x-show="activeTab === 'preview'" class="prose max-w-none">
+                <div class="border border-gray-200 rounded-lg p-4 bg-gray-50">
+                    <iframe x-ref="previewFrame" class="w-full h-96 bg-white rounded" src="about:blank"></iframe>
+                </div>
+            </div>
+
+            <div x-show="activeTab === 'code'" class="code-block">
+                <div class="bg-gray-900 text-gray-100 p-4 rounded-lg overflow-auto">
+                    <pre x-text="result?.final_document?.content || ''"></pre>
+                </div>
+            </div>
+
+            <div x-show="activeTab === 'analysis'" class="space-y-6">
+                <div x-show="result?.quality_report" class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                    <div class="bg-blue-50 p-4 rounded-lg">
+                        <h4 class="font-semibold text-blue-800 mb-2">质量评分</h4>
+                        <div class="text-3xl font-bold text-blue-600" x-text="result?.quality_report?.overall_score + '/100'"></div>
+                        <div class="text-sm text-blue-600" x-text="'等级: ' + (result?.quality_report?.quality_grade || 'N/A')"></div>
+                    </div>
+                    <div class="bg-green-50 p-4 rounded-lg">
+                        <h4 class="font-semibold text-green-800 mb-2">处理时间</h4>
+                        <div class="text-3xl font-bold text-green-600" x-text="(result?.processing_metadata?.total_time || 0).toFixed(2) + 's'"></div>
+                        <div class="text-sm text-green-600">异步高效处理</div>
+                    </div>
+                </div>
+                
+                <div x-show="result?.quality_report?.strengths" class="bg-white border border-gray-200 rounded-lg p-4">
+                    <h4 class="font-semibold text-gray-800 mb-3">优点</h4>
+                    <ul class="space-y-1">
+                        <template x-for="strength in (result?.quality_report?.strengths || [])">
+                            <li class="text-sm text-gray-600">• <span x-text="strength"></span></li>
+                        </template>
+                    </ul>
+                </div>
+
+                <div x-show="result?.quality_report?.improvement_suggestions" class="bg-white border border-gray-200 rounded-lg p-4">
+                    <h4 class="font-semibold text-gray-800 mb-3">改进建议</h4>
+                    <ul class="space-y-1">
+                        <template x-for="suggestion in (result?.quality_report?.improvement_suggestions || [])">
+                            <li class="text-sm text-gray-600">• <span x-text="suggestion"></span></li>
+                        </template>
+                    </ul>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- 系统状态模态框 -->
+    <div x-show="showSystemStatus" class="fixed inset-0 bg-gray-600 bg-opacity-50 overflow-y-auto h-full w-full z-50" @click="showSystemStatus = false">
+        <div class="relative top-20 mx-auto p-5 border w-11/12 md:w-3/4 lg:w-1/2 shadow-lg rounded-md bg-white" @click.stop>
+            <div class="mt-3">
+                <h3 class="text-lg font-medium text-gray-900 mb-4">系统详细状态</h3>
+                <div class="space-y-4 text-sm">
+                    <div class="grid grid-cols-2 gap-4">
+                        <div class="bg-blue-50 p-3 rounded">
+                            <div class="font-medium">系统状态</div>
+                            <div class="text-blue-600" x-text="systemStatus.status || '正常'"></div>
+                        </div>
+                        <div class="bg-green-50 p-3 rounded">
+                            <div class="font-medium">活跃会话</div>
+                            <div class="text-green-600" x-text="systemStatus.activeSessions || 0"></div>
+                        </div>
+                    </div>
+                    
+                    <div class="bg-gray-50 p-4 rounded">
+                        <h4 class="font-medium mb-2">性能指标</h4>
+                        <div class="space-y-2">
+                            <div class="flex justify-between">
+                                <span>缓存命中率</span>
+                                <span x-text="systemStatus.cacheHitRate || '0%'"></span>
+                            </div>
+                            <div class="flex justify-between">
+                                <span>平均处理时间</span>
+                                <span x-text="systemStatus.avgResponseTime || '0s'"></span>
+                            </div>
+                            <div class="flex justify-between">
+                                <span>成功率</span>
+                                <span x-text="systemStatus.successRate || '0%'"></span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="flex justify-end mt-6">
+                    <button @click="showSystemStatus = false" class="bg-gray-600 hover:bg-gray-700 text-white px-4 py-2 rounded">
+                        关闭
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        function documentProcessor() {
+            return {
+                // 基本状态
+                processingMode: 'single',
+                documentContent: '',
+                instruction: '转换为现代商务风格的HTML文档，图片加圆角边框',
+                outputFormat: 'HTML',
+                processingStrategy: 'auto',
+                
+                // 批量处理
+                batchDocuments: [],
+                batchInstruction: '统一转换为企业标准格式',
+                batchStrategy: 'quick',
+                maxConcurrent: 3,
+                
+                // 处理状态
+                isProcessing: false,
+                progress: 0,
+                currentMessage: '',
+                sessionId: null,
+                
+                // 结果和界面
+                result: null,
+                activeTab: 'preview',
+                
+                // WebSocket
+                websocket: null,
+                connectionStatus: 'disconnected',
+                
+                // 系统状态
+                systemStatus: {
+                    activeSessions: 0,
+                    totalProcessed: 0,
+                    cacheHitRate: '0%'
+                },
+                showSystemStatus: false,
+                
+                // 模板
+                templates: [
+                    {
+                        name: '商务报告',
+                        description: '专业的商务报告格式',
+                        instruction: '转换为专业商务报告格式，使用正式的排版和配色方案'
+                    },
+                    {
+                        name: '技术文档',
+                        description: '清晰的技术文档格式',
+                        instruction: '转换为技术文档格式，突出代码和技术要点'
+                    },
+                    {
+                        name: '创意设计',
+                        description: '充满创意的设计风格',
+                        instruction: '转换为创意设计风格，使用艺术化的排版和色彩'
+                    }
+                ],
+                
+                init() {
+                    this.loadSystemStatus();
+                    this.loadTemplates();
+                    setInterval(() => this.loadSystemStatus(), 30000); // 每30秒更新状态
+                },
+                
+                // WebSocket连接
+                connectWebSocket(sessionId) {
+                    const protocol = window.location.protocol === 'https:' ? 'wss:' : 'ws:';
+                    const wsUrl = `${protocol}//${window.location.host}/ws/${sessionId}`;
+                    
+                    this.websocket = new WebSocket(wsUrl);
+                    
+                    this.websocket.onopen = () => {
+                        this.connectionStatus = 'connected';
+                        console.log('WebSocket连接已建立');
+                    };
+                    
+                    this.websocket.onmessage = (event) => {
+                        const message = JSON.parse(event.data);
+                        this.handleWebSocketMessage(message);
+                    };
+                    
+                    this.websocket.onclose = () => {
+                        this.connectionStatus = 'disconnected';
+                        console.log('WebSocket连接已断开');
+                    };
+                    
+                    this.websocket.onerror = (error) => {
+                        console.error('WebSocket错误:', error);
+                        this.connectionStatus = 'error';
+                    };
+                },
+                
+                handleWebSocketMessage(message) {
+                    switch (message.type) {
+                        case 'progress_update':
+                            this.progress = message.progress;
+                            this.currentMessage = message.message;
+                            break;
+                        case 'processing_completed':
+                            this.handleProcessingCompleted(message.result);
+                            break;
+                        case 'processing_failed':
+                            this.handleProcessingFailed(message.error);
+                            break;
+                        case 'batch_processing_completed':
+                            this.handleBatchProcessingCompleted(message.result);
+                            break;
+                    }
+                },
+                
+                // 文件上传处理
+                async handleFileUpload(event) {
+                    const file = event.target.files[0];
+                    if (!file) return;
+                    
+                    const formData = new FormData();
+                    formData.append('file', file);
+                    
+                    try {
+                        const response = await fetch('/api/upload', {
+                            method: 'POST',
+                            body: formData
+                        });
+                        
+                        if (response.ok) {
+                            const data = await response.json();
+                            this.documentContent = data.content;
+                            this.showNotification('文件上传成功', 'success');
+                        } else {
+                            throw new Error('文件上传失败');
+                        }
+                    } catch (error) {
+                        this.showNotification('文件上传失败: ' + error.message, 'error');
+                    }
+                },
+                
+                // 处理单个文档
+                async processDocument() {
+                    if (!this.documentContent.trim()) {
+                        this.showNotification('请输入文档内容', 'warning');
+                        return;
+                    }
+                    
+                    this.isProcessing = true;
+                    this.progress = 0;
+                    this.currentMessage = '启动处理...';
+                    
+                    try {
+                        const response = await fetch('/api/process', {
+                            method: 'POST',
+                            headers: {
+                                'Content-Type': 'application/json',
+                            },
+                            body: JSON.stringify({
+                                content: this.documentContent,
+                                instruction: this.instruction,
+                                output_format: this.outputFormat,
+                                processing_strategy: this.processingStrategy
+                            })
+                        });
+                        
+                        if (response.ok) {
+                            const data = await response.json();
+                            this.sessionId = data.session_id;
+                            this.connectWebSocket(data.session_id);
+                            this.showNotification('处理已开始', 'info');
+                        } else {
+                            throw new Error('启动处理失败');
+                        }
+                    } catch (error) {
+                        this.isProcessing = false;
+                        this.showNotification('处理失败: ' + error.message, 'error');
+                    }
+                },
+                
+                // 批量处理
+                async batchProcess() {
+                    if (this.batchDocuments.length === 0) {
+                        this.showNotification('请添加要处理的文档', 'warning');
+                        return;
+                    }
+                    
+                    this.isProcessing = true;
+                    this.progress = 0;
+                    this.currentMessage = '启动批量处理...';
+                    
+                    try {
+                        const response = await fetch('/api/batch-process', {
+                            method: 'POST',
+                            headers: {
+                                'Content-Type': 'application/json',
+                            },
+                            body: JSON.stringify({
+                                documents: this.batchDocuments,
+                                instruction: this.batchInstruction,
+                                processing_strategy: this.batchStrategy,
+                                max_concurrent: parseInt(this.maxConcurrent)
+                            })
+                        });
+                        
+                        if (response.ok) {
+                            const data = await response.json();
+                            this.sessionId = data.session_id;
+                            this.connectWebSocket(data.session_id);
+                            this.showNotification('批量处理已开始', 'info');
+                        } else {
+                            throw new Error('启动批量处理失败');
+                        }
+                    } catch (error) {
+                        this.isProcessing = false;
+                        this.showNotification('批量处理失败: ' + error.message, 'error');
+                    }
+                },
+                
+                // 取消处理
+                async cancelProcessing() {
+                    if (!this.sessionId) return;
+                    
+                    try {
+                        await fetch(`/api/session/${this.sessionId}`, {
+                            method: 'DELETE'
+                        });
+                        
+                        this.isProcessing = false;
+                        this.progress = 0;
+                        this.showNotification('处理已取消', 'info');
+                        
+                        if (this.websocket) {
+                            this.websocket.close();
+                        }
+                    } catch (error) {
+                        console.error('取消处理失败:', error);
+                    }
+                },
+                
+                // 处理完成
+                handleProcessingCompleted(result) {
+                    this.isProcessing = false;
+                    this.progress = 100;
+                    this.result = result;
+                    this.currentMessage = '处理完成';
+                    this.activeTab = 'preview';
+                    
+                    // 更新预览
+                    this.$nextTick(() => {
+                        this.updatePreview();
+                    });
+                    
+                    this.showNotification('文档处理完成！', 'success');
+                    
+                    if (this.websocket) {
+                        this.websocket.close();
+                    }
+                },
+                
+                // 处理失败
+                handleProcessingFailed(error) {
+                    this.isProcessing = false;
+                    this.showNotification('处理失败: ' + error, 'error');
+                    
+                    if (this.websocket) {
+                        this.websocket.close();
+                    }
+                },
+                
+                // 批量处理完成
+                handleBatchProcessingCompleted(result) {
+                    this.isProcessing = false;
+                    this.progress = 100;
+                    this.result = result;
+                    this.currentMessage = '批量处理完成';
+                    
+                    const successCount = result.batch_results?.successful_count || 0;
+                    const totalCount = successCount + (result.batch_results?.failed_count || 0);
+                    this.showNotification(`批量处理完成: ${successCount}/${totalCount} 成功`, 'success');
+                    
+                    if (this.websocket) {
+                        this.websocket.close();
+                    }
+                },
+                
+                // 更新预览
+                updatePreview() {
+                    if (!this.result?.final_document?.content) return;
+                    
+                    const frame = this.$refs.previewFrame;
+                    if (frame) {
+                        const doc = frame.contentDocument || frame.contentWindow.document;
+                        doc.open();
+                        doc.write(this.result.final_document.content);
+                        doc.close();
+                    }
+                },
+                
+                // 下载结果
+                downloadResult() {
+                    if (!this.result?.final_document?.content) return;
+                    
+                    const content = this.result.final_document.content;
+                    const format = this.result.final_document.format || 'HTML';
+                    const extension = format.toLowerCase() === 'html' ? 'html' : 'txt';
+                    
+                    const blob = new Blob([content], { type: 'text/' + extension });
+                    const url = URL.createObjectURL(blob);
+                    const a = document.createElement('a');
+                    a.href = url;
+                    a.download = `processed_document.${extension}`;
+                    document.body.appendChild(a);
+                    a.click();
+                    document.body.removeChild(a);
+                    URL.revokeObjectURL(url);
+                },
+                
+                // 分享结果
+                shareResult() {
+                    if (navigator.share && this.result) {
+                        navigator.share({
+                            title: '智能文档处理结果',
+                            text: '查看我的文档处理结果',
+                            url: window.location.href
+                        });
+                    } else {
+                        // 复制到剪贴板
+                        navigator.clipboard.writeText(window.location.href).then(() => {
+                            this.showNotification('链接已复制到剪贴板', 'success');
+                        });
+                    }
+                },
+                
+                // 应用模板
+                applyTemplate(template) {
+                    this.instruction = template.instruction;
+                    this.showNotification(`已应用 ${template.name} 模板`, 'success');
+                },
+                
+                // 加载系统状态
+                async loadSystemStatus() {
+                    try {
+                        const response = await fetch('/api/status');
+                        if (response.ok) {
+                            const data = await response.json();
+                            this.systemStatus = {
+                                activeSessions: data.active_sessions,
+                                totalProcessed: data.total_processed,
+                                cacheHitRate: data.cache_stats?.cache_hit_rate || '0%',
+                                avgResponseTime: data.cache_stats?.avg_response_time || '0s',
+                                successRate: data.performance_metrics?.overall_metrics?.success_rate || '0%',
+                                status: data.status
+                            };
+                        }
+                    } catch (error) {
+                        console.error('加载系统状态失败:', error);
+                    }
+                },
+                
+                // 加载模板
+                async loadTemplates() {
+                    try {
+                        const response = await fetch('/api/templates');
+                        if (response.ok) {
+                            const data = await response.json();
+                            this.templates = data.templates || this.templates;
+                        }
+                    } catch (error) {
+                        console.error('加载模板失败:', error);
+                    }
+                },
+                
+                // 显示通知
+                showNotification(message, type = 'info') {
+                    // 这里可以实现通知系统
+                    console.log(`[${type.toUpperCase()}] ${message}`);
+                    
+                    // 简单的浏览器通知
+                    if (type === 'success') {
+                        if (Notification.permission === 'granted') {
+                            new Notification('智能文档处理系统', {
+                                body: message,
+                                icon: '/favicon.ico'
+                            });
+                        }
+                    }
+                }
+            }
+        }
+        
+        // 请求通知权限
+        if ('Notification' in window && Notification.permission === 'default') {
+            Notification.requestPermission();
+        }
+    </script>
+</body>
+</html>
