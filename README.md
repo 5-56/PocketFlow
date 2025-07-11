@@ -26,8 +26,8 @@
 
 1. **访问发布页面**: [GitHub Releases](../../releases) 下载最新版本
 2. **选择对应平台**:
-   - Windows: `DocumentProcessor-v*-win64.zip`
-   - Linux: `DocumentProcessor-linux-x64.tar.gz`
+   - Windows: `DocumentProcessor-Enhanced-v*-win64.zip`
+   - Linux: `DocumentProcessor-Enhanced-v*-linux-x64.tar.gz`
 3. **解压并设置API密钥**:
    ```bash
    # Windows
@@ -38,11 +38,11 @@
    ```
 4. **运行程序**:
    ```bash
-   # Windows
-   DocumentProcessor.exe
+   # Windows - 双击启动.bat或
+   DocumentProcessor-Enhanced.exe --web
    
-   # Linux
-   ./DocumentProcessor-linux
+   # Linux - 运行./start.sh或
+   ./DocumentProcessor-Enhanced --web
    ```
 
 ### 方式二：从源码安装
@@ -71,26 +71,28 @@ export OPENAI_API_KEY="your-api-key-here"
 ### 3. 运行系统
 
 ```bash
-# 增强交互模式（推荐，包含所有新功能）
-python main.py --enhanced
+# 增强版主程序（推荐，统一入口）
+python main_enhanced.py --web         # Web服务模式
+python main_enhanced.py --cli         # 命令行模式
+python main_enhanced.py --info        # 系统信息
+python main_enhanced.py --test        # API测试
 
-# 基础交互模式
-python main.py
+# 优化版（高性能）
+python start_optimized.py --web
 
-# 快速处理单个文件（启用分析和模板推荐）
-python main.py -f document.md -i "转换为现代商务风格的HTML文档" --analysis --templates
+# 基础版本
+python main.py                        # 交互模式
+python main.py -f document.md -i "转换为现代商务风格"
 
 # 多格式输出
-python main.py -f document.md -i "学术论文格式" -o PDF
+python main_enhanced.py --cli         # 然后选择输出格式
 
 # 批量处理
-python main.py -b input_folder output_folder -i "统一格式为学术论文风格"
+python main.py -b input_folder output_folder -i "统一格式"
 
-# 查看支持的格式
-python main.py --formats
-
-# 查看可用模板
-python main.py --template-info
+# Web服务模式（推荐）
+python main_enhanced.py --web --port 8000
+# 然后访问 http://localhost:8000
 ```
 
 ## 📖 使用示例
