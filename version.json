@@ -1,17 +1,20 @@
 {
-  "version": "2.0.0",
+  "version": "2.1.0",
   "release_date": "2024-12-28",
-  "build_number": 2,
-  "description": "智能文档自动排版系统 - 优化版",
+  "build_number": 3,
+  "description": "智能文档自动排版系统 - 增强版",
   "features": [
+    "增强版主程序：统一入口，多种运行模式",
     "异步高性能处理 (3-5倍速度提升)",
     "智能AI决策和自适应策略",
     "现代Web界面和实时通信",
     "批量处理和并行优化",
-    "多格式输出支持",
+    "多格式输出支持 (HTML/PDF/DOCX/PPTX)",
     "质量分析和监控",
     "智能代理系统",
-    "企业级缓存和性能优化"
+    "企业级缓存和性能优化",
+    "环境检测和依赖管理",
+    "详细日志记录和错误处理"
   ],
   "requirements": {
     "python": ">=3.8",
@@ -27,5 +30,20 @@
     "memory_optimization": "30-50% reduction",
     "concurrent_processing": "10x improvement",
     "cache_hit_rate": "80%+ target"
+  },
+  "entry_points": {
+    "enhanced": "main_enhanced.py",
+    "optimized": "start_optimized.py", 
+    "basic": "main.py",
+    "web_only": "web_api.py"
+  },
+  "changelog": {
+    "2.1.0": [
+      "新增增强版主程序 (main_enhanced.py)",
+      "统一的命令行界面和运行模式选择",
+      "改进的环境检测和依赖管理",
+      "增强的错误处理和日志系统",
+      "优化的用户体验和交互流程"
+    ]
   }
 }

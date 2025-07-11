@@ -1,0 +1,71 @@
+🎨 智能文档自动排版系统 v2.1.0 - 增强版演示包
+
+⚠️  重要说明:
+这是演示版本包，包含了Python源码和所有必要文件。
+真正的Windows exe文件正在通过GitHub Actions自动构建中。
+
+🔗 获取真正的exe文件:
+访问: https://github.com/5-56/PocketFlow/releases/tag/v2.1.0
+
+📦 当前包内容:
+- main_enhanced.py: 增强版主程序源码
+- 启动.bat: Windows启动脚本
+- README.md: 完整使用文档
+- BUILD_GUIDE.md: 构建指南
+- requirements_enhanced.txt: 完整依赖列表
+
+🚀 如果您已安装Python环境:
+1. 安装依赖: pip install -r requirements_enhanced.txt
+2. 运行程序: python main_enhanced.py --web
+3. 访问: http://localhost:8000
+
+🌐 Web服务模式特性:
+- 现代化Web界面
+- 实时进度更新  
+- 批量处理支持
+- 多用户协作
+- 拖拽文件上传
+
+💻 命令行模式特性:
+- 交互式文档处理
+- 系统环境检查
+- API连接测试
+- 批量文件处理
+
+📋 功能特性:
+✨ 增强版主程序：统一入口，多种运行模式
+🔍 环境检测和依赖管理
+📝 详细日志记录和错误处理
+🔧 多平台自动化构建系统
+📦 自动化版本管理和发布
+📚 完整的文档和指南系统
+🌐 现代化Web界面和实时通信
+⚡ 异步高性能处理 (3-5倍速度提升)
+🤖 智能AI决策和自适应策略
+
+⚙️ 系统要求:
+- Windows 10+ (对于真正的exe文件)
+- Python 3.8+ (对于源码运行)
+- OpenAI API密钥
+- 网络连接
+
+💡 使用技巧:
+1. 设置环境变量: set OPENAI_API_KEY=your_api_key_here
+2. Web模式提供最佳用户体验
+3. 使用 --info 参数检查系统状态
+4. 使用 --test 参数验证API连接
+
+🔧 故障排除:
+- 如果启动失败，请检查Python环境和依赖安装
+- 如果API调用失败，请检查API密钥设置
+- 查看详细日志: logs/document_processor_*.log
+
+📞 技术支持:
+- GitHub Issues: https://github.com/5-56/PocketFlow/issues
+- 使用文档: README.md
+- 构建指南: BUILD_GUIDE.md
+
+---
+演示包创建时间: 2025-07-11 15:52:47
+真正的exe文件状态: 🔄 正在构建中...
+预计完成时间: 5-10分钟
